@@ -1,0 +1,73 @@
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th width="10%">用户名</th>
+            <th width="10%">真实姓名</th>
+            <th width="10%">部门</th>
+            <th width="20%">角色</th>
+            <th width="15%">权限统计</th>
+            <th width="15%">状态</th>
+            <th width="20%">操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for analysis in users %}
+            {% if not filter_issues or analysis.issues %}
+                {% if not filter_noroles or not analysis.roles.exists %}
+                    <tr>
+                        <td>{{ analysis.user.username }}</td>
+                        <td>{{ analysis.user.name }}</td>
+                        <td>{{ analysis.user.department }}</td>
+                        <td>
+                            {% for role in analysis.roles %}
+                                <span class="role-tag">{{ role.title }}</span>
+                            {% empty %}
+                                <span class="text-muted">无角色</span>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            <div class="permission-summary">
+                                基础权限: {{ analysis.basic_perm_count }}个<br>
+                                工序权限: {{ analysis.step_perm_count }}个
+                            </div>
+                        </td>
+                        <td>
+                            {% if analysis.status == 'normal' %}
+                                <span class="status-badge status-normal">正常</span>
+                            {% else %}
+                                <span class="status-badge status-warning">异常</span>
+                                <div class="mt-1">
+                                    {% for issue in analysis.issues %}
+                                        <span class="issue-tag">{{ issue }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-actions">
+                                <a href="/stark/crm/userinfo/permission/check/{{ analysis.user.id }}/" 
+                                   class="btn btn-info btn-sm">
+                                    <i class="fa fa-search"></i> 详细检查
+                                </a>
+                                <a href="/stark/crm/userinfo/{{ analysis.user.id }}/change/" 
+                                   class="btn btn-primary btn-sm">
+                                    <i class="fa fa-edit"></i> 编辑
+                                </a>
+                                <a href="/rbac/distribute/permissions/?uid={{ analysis.user.id }}" 
+                                   class="btn btn-success btn-sm" target="_blank">
+                                    <i class="fa fa-cog"></i> 分配权限
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+            {% endif %}
+        {% empty %}
+            <tr>
+                <td colspan="7" class="no-data">
+                    <i class="fa fa-info-circle"></i> 暂无数据
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table> 

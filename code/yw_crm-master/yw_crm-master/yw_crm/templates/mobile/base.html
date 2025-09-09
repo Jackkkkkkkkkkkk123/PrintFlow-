@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <title>{% block title %}华龙印务管理系统{% endblock %}</title>
+    
+    <!-- 基础样式 -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            font-size: 14px;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* 头部导航 */
+        .mobile-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: env(safe-area-inset-top) 0 0 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .header-back {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 5px;
+        }
+        
+        .header-menu {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px;
+        }
+        
+        /* 底部导航 */
+        .mobile-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            z-index: 1000;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 10px 5px;
+            text-decoration: none;
+            color: #666;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: color 0.3s;
+        }
+        
+        .nav-item.active {
+            color: #667eea;
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 2px;
+        }
+        
+        /* 主内容区 */
+        .mobile-content {
+            padding: 20px;
+            padding-bottom: 80px; /* 为底部导航留空间 */
+            min-height: calc(100vh - 140px);
+        }
+        
+        /* 卡片样式 */
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
+        }
+        
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        /* 列表样式 */
+        .list-item {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
+        }
+        
+        .list-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .list-item-title {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-processing { background: #d1ecf1; color: #0c5460; }
+        .status-completed { background: #d4edda; color: #155724; }
+        
+        /* 按钮样式 */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #667eea;
+            color: #667eea;
+        }
+        
+        /* 加载状态 */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .loading-spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 通知样式 */
+        .notification {
+            position: fixed;
+            top: 80px;
+            left: 20px;
+            right: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            z-index: 2000;
+            transform: translateY(-100px);
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        
+        .notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .notification.success { background: #28a745; }
+        .notification.error { background: #dc3545; }
+        .notification.info { background: #17a2b8; }
+        
+        /* 响应式适配 */
+        @media (max-width: 375px) {
+            .mobile-content { padding: 15px; }
+            .stats-grid { gap: 10px; }
+            .stat-card { padding: 15px; }
+        }
+        
+        /* 安全区域适配 */
+        .mobile-header {
+            padding-top: 10px;
+        }
+        
+        .mobile-nav {
+            padding-bottom: 10px;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- 头部导航 -->
+    <header class="mobile-header">
+        <div class="header-content">
+            <button class="header-back" onclick="history.back()" style="{% if not show_back %}display:none;{% endif %}">
+                ← 返回
+            </button>
+            <h1 class="header-title">{% block header_title %}华龙印务{% endblock %}</h1>
+            <button class="header-menu" onclick="toggleMenu()">
+                ☰
+            </button>
+        </div>
+    </header>
+    
+    <!-- 主内容区 -->
+    <main class="mobile-content">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- 底部导航 -->
+    {% if user_type == 'root' or request.session.user_info.username == 'root' %}
+    <nav class="mobile-nav">
+        <a href="{% url 'mobile_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'mobile_dashboard' %}active{% endif %}">
+            <span class="nav-icon">📊</span>
+            <span>仪表板</span>
+        </a>
+        <a href="{% url 'mobile_orders' %}" class="nav-item {% if request.resolver_match.url_name == 'mobile_orders' or request.resolver_match.url_name == 'mobile_order_detail' %}active{% endif %}">
+            <span class="nav-icon">📋</span>
+            <span>订单</span>
+        </a>
+        <a href="{% url 'mobile_ai_assistant' %}" class="nav-item {% if request.resolver_match.url_name == 'mobile_ai_assistant' %}active{% endif %}">
+            <span class="nav-icon">🤖</span>
+            <span>AI助手</span>
+        </a>
+        <a href="{% url 'logout' %}" class="nav-item">
+            <span class="nav-icon">👤</span>
+            <span>退出</span>
+        </a>
+    </nav>
+    {% else %}
+    <nav class="mobile-nav">
+        <a href="{% url 'mobile_orders' %}" class="nav-item {% if request.resolver_match.url_name == 'mobile_orders' or request.resolver_match.url_name == 'mobile_order_detail' %}active{% endif %}">
+            <span class="nav-icon">📋</span>
+            <span>订单</span>
+        </a>
+        <a href="#" class="nav-item" onclick="location.reload()">
+            <span class="nav-icon">🔄</span>
+            <span>刷新</span>
+        </a>
+        <a href="{% url 'logout' %}" class="nav-item">
+            <span class="nav-icon">👤</span>
+            <span>退出</span>
+        </a>
+    </nav>
+    {% endif %}
+    
+    <!-- 通知容器 -->
+    <div id="notification-container"></div>
+    
+    <!-- JavaScript -->
+    <script>
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('notification-container');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            container.appendChild(notification);
+            
+            // 显示动画
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+            
+            // 自动隐藏
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+        
+        // 切换菜单
+        function toggleMenu() {
+            // 这里可以添加菜单切换逻辑
+            alert('菜单功能开发中...');
+        }
+        
+        // 页面加载完成
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('手机端页面加载完成');
+            
+            // 可以在这里初始化WebSocket等功能
+            {% block page_ready %}{% endblock %}
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

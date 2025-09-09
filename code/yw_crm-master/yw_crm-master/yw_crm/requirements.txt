@@ -1,0 +1,33 @@
+# core
+Django==4.2.8
+asgiref==3.7.2
+
+# channels ecosystem
+channels==4.0.0
+Twisted==24.3.0  # 兼容Python 3.12的最新版本
+channels-redis==4.1.0
+redis==5.0.1  # Python 3.12兼容版本
+
+# data processing (Python 3.12兼容)
+numpy==1.26.4  # RAG对话记忆向量计算
+pandas==2.2.2  # 支持Python 3.12的最新2.x版本
+openpyxl==3.1.2
+xlrd==2.0.1  # 注意：仅用于读取旧.xls文件
+
+# database
+PyMySQL==1.1.0  # 兼容Python 3.12
+
+# cryptography (Python 3.12必需)
+cryptography==44.0.1  # 当前最新稳定版
+
+# scheduler for AI assistant
+schedule==1.2.0  # AI助手定时任务调度器
+
+# LangChain for conversational AI assistant
+langchain>=0.2.0
+langchain-openai>=0.1.9
+langchain-community>=0.2.0
+langchain-core>=0.2.0
+openai>=1.30.0
+tiktoken>=0.7.0  # for token counting
+pydantic==2.7.1  # for data validation

@@ -1,0 +1,61 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        <i class="fa fa-tasks"></i> 订单进度管理 - {{ order.order_no }} ({{ order.get_print_type_display }})
+                    </h3>
+                </div>
+                <div class="panel-body">
+                    {% if error %}
+                        <div class="alert alert-danger">
+                            <h4><i class="fa fa-exclamation-triangle"></i> 错误</h4>
+                            <p>{{ error }}</p>
+                        </div>
+                    {% elif order %}
+                        <div class="row">
+                            {# 根据是否有封面和内文进度来决定布局 #}
+                            {% if cover_progress and content_progress %}
+                                {# 封面+内文：两栏布局 #}
+                                <div class="col-md-6">{% include 'includes/progress_card.html' with title="封面进度" progress=cover_progress step_list=cover_step_list card_class="panel-primary" %}</div>
+                                <div class="col-md-6">{% include 'includes/progress_card.html' with title="内文进度" progress=content_progress step_list=content_step_list card_class="panel-info" %}</div>
+                            {% elif cover_progress %}
+                                {# 只有封面：单栏布局 #}
+                                <div class="col-md-12">{% include 'includes/progress_card.html' with title="封面进度" progress=cover_progress step_list=cover_step_list card_class="panel-primary" %}</div>
+                            {% elif content_progress %}
+                                {# 只有内文：单栏布局 #}
+                                <div class="col-md-12">{% include 'includes/progress_card.html' with title="内文进度" progress=content_progress step_list=content_step_list card_class="panel-info" %}</div>
+                            {% else %}
+                                <div class="col-md-12">
+                                    <div class="alert alert-info">
+                                        <i class="fa fa-info-circle"></i> 该订单暂无进度步骤。
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- 底部按钮 -->
+                        <hr>
+                        <div class="text-center" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                            <a href="{% url 'print_order_detail' order.id %}" class="btn btn-default btn-lg">
+                                <i class="fa fa-info-circle"></i> 查看订单详情
+                            </a>
+                            <a href="{% url 'print_order_list' %}" class="btn btn-primary btn-lg">
+                                <i class="fa fa-arrow-left"></i> 返回订单列表
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 模态框和JS代码 -->
+{% include 'includes/progress_modals_and_js.html' %}
+
+{% endblock %}

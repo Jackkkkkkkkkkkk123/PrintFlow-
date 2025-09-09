@@ -1,0 +1,306 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        <i class="fa fa-print"></i> 印刷订单管理
+                    </h3>
+                    <div class="panel-actions">
+                        <a href="{% url 'create_print_order' %}" class="btn btn-primary">
+                            <i class="fa fa-plus"></i> 创建新订单
+                        </a>
+                        <a href="{% url 'print_dashboard' %}" class="btn btn-info">
+                            <i class="fa fa-dashboard"></i> 仪表板
+                        </a>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>订单编号</th>
+                                    <th>客户名称</th>
+                                    <th>产品名称</th>
+                                    <th>印刷类型</th>
+                                    <th>数量</th>
+                                    <th>下单日期</th>
+                                    <th>交货日期</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ order.order_no }}</strong>
+                                    </td>
+                                    <td>{{ order.customer_name|default:"-" }}</td>
+                                    <td>{{ order.product_name|default:"-" }}</td>
+                                    <td>
+                                        <span class="label label-info">
+                                            {{ order.get_print_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ order.quantity|default:"-" }}</td>
+                                    <td>{{ order.order_date|date:"Y-m-d"|default:"-" }}</td>
+                                    <td>{{ order.delivery_date|date:"Y-m-d"|default:"-" }}</td>
+                                    <td>
+                                        <span class="label label-{% if order.status == 1 %}warning{% elif order.status == 2 %}info{% elif order.status == 3 %}success{% else %}default{% endif %}">
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{% url 'print_order_detail' order.id %}" class="btn btn-sm btn-primary" title="查看详情">
+                                                <i class="fa fa-eye"></i> 详情
+                                            </a>
+                                            <a href="{% url 'order_progress' order.id %}" class="btn btn-sm btn-success" title="进度管理">
+                                                <i class="fa fa-tasks"></i> 进度
+                                            </a>
+                                        </div>
+                                        <div class="btn-group btn-group-secondary">
+                                            <a href="{% url 'edit_print_order' order.id %}" class="btn btn-sm btn-warning" title="编辑订单">
+                                                <i class="fa fa-edit"></i> 编辑
+                                            </a>
+                                            <button class="btn btn-sm btn-danger" onclick="deleteOrder({{ order.id }})" title="删除订单">
+                                                <i class="fa fa-trash"></i> 删除
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted">
+                                        <div style="padding: 40px;">
+                                            <i class="fa fa-inbox fa-3x"></i>
+                                            <h4>暂无印刷订单</h4>
+                                            <p>点击上方"创建新订单"按钮开始创建第一个订单</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function deleteOrder(orderId) {
+    if (confirm('确定要删除该订单吗？此操作不可恢复！')) {
+        // 显示删除进度
+        var button = event.target.closest('button');
+        var originalHtml = button.innerHTML;
+        button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> 删除中...';
+        button.disabled = true;
+        
+        fetch('/print-orders/delete/' + orderId + '/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            if (data.status) {
+                location.reload();
+            } else {
+                // 恢复按钮状态
+                button.innerHTML = originalHtml;
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('删除失败:', error);
+            alert('删除失败，请重试');
+            button.innerHTML = originalHtml;
+            button.disabled = false;
+        });
+    }
+}
+</script>
+
+<style>
+.panel-actions {
+    float: right;
+    margin-top: -5px;
+}
+
+.btn-group {
+    margin-bottom: 3px;
+}
+
+.btn-group-secondary {
+    margin-top: 3px;
+}
+
+/* 操作列内的按钮组布局 */
+.table td:last-child .btn-group,
+.table td:last-child .btn-group-secondary {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* 确保所有按钮宽度一致 */
+.table td:last-child .btn {
+    min-width: 60px;
+    width: 60px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.table > tbody > tr > td {
+    vertical-align: middle;
+    padding: 12px 6px;
+    line-height: 1.6;
+}
+
+/* 操作列特殊处理 */
+.table > tbody > tr > td:last-child {
+    padding: 15px 6px;
+    height: 80px;
+    vertical-align: middle;
+}
+
+.table > thead > tr > th {
+    padding: 10px 6px;
+}
+
+.label {
+    font-size: 11px;
+    padding: 4px 8px;
+}
+
+/* 增加操作列的宽度 */
+.table thead th:last-child,
+.table tbody td:last-child {
+    width: 180px;
+    min-width: 180px;
+}
+
+/* 改善按钮组的布局 */
+.btn-group + .btn-group {
+    margin-left: 8px;
+}
+
+/* 确保按钮在小屏幕上不换行 */
+.table td:last-child {
+    white-space: nowrap;
+}
+
+/* 增加表格容器的最小宽度 */
+.table-responsive {
+    min-width: 1400px;
+}
+
+/* 为整个表格设置更宽的最小宽度 */
+.table {
+    min-width: 1150px;
+}
+
+/* 让面板主体铺满屏幕宽度 */
+.container-fluid {
+    max-width: none;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.panel-body {
+    padding: 15px;
+}
+
+/* 取消表格响应式容器的宽度限制 */
+.table-responsive {
+    min-width: unset;
+    width: 100%;
+}
+
+/* 调整各列的宽度分配 */
+.table thead th:nth-child(1),
+.table tbody td:nth-child(1) {
+    width: 12%;
+    max-width: 120px;
+}
+
+.table thead th:nth-child(2),
+.table tbody td:nth-child(2) {
+    width: 10%;
+    max-width: 100px;
+}
+
+.table thead th:nth-child(3),
+.table tbody td:nth-child(3) {
+    width: 20%;
+    max-width: 200px;
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+.table thead th:nth-child(4),
+.table tbody td:nth-child(4) {
+    width: 8%;
+    max-width: 80px;
+}
+
+.table thead th:nth-child(5),
+.table tbody td:nth-child(5) {
+    width: 8%;
+    max-width: 80px;
+}
+
+.table thead th:nth-child(6),
+.table tbody td:nth-child(6) {
+    width: 10%;
+    max-width: 100px;
+}
+
+.table thead th:nth-child(7),
+.table tbody td:nth-child(7) {
+    width: 10%;
+    max-width: 100px;
+}
+
+.table thead th:nth-child(8),
+.table tbody td:nth-child(8) {
+    width: 8%;
+    max-width: 80px;
+}
+
+/* 操作列保持原有设置 */
+.table thead th:nth-child(9),
+.table tbody td:nth-child(9) {
+    width: 14%;
+    min-width: 140px;
+}
+</style>
+{% endblock %} 

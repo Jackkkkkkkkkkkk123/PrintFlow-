@@ -1,0 +1,143 @@
+{% extends 'mobile/base.html' %}
+{% load static %}
+
+{% block title %}订单列表 - 华龙印务管理系统{% endblock %}
+{% block header_title %}订单列表{% endblock %}
+
+{% block content %}
+<!-- 统计卡片 -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ total_orders }}</div>
+        <div class="stat-label">总订单</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ pending_orders }}</div>
+        <div class="stat-label">待处理</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ processing_orders }}</div>
+        <div class="stat-label">处理中</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ completed_orders }}</div>
+        <div class="stat-label">已完成</div>
+    </div>
+</div>
+
+<!-- 订单列表 -->
+<div class="card">
+    <div class="card-title">最新订单</div>
+    
+    {% if orders %}
+        {% for order in orders %}
+        <div class="list-item" onclick="showOrderDetail({{ order.id }})">
+            <div class="list-item-header">
+                <div class="list-item-title">{{ order.product_name|default:"未命名产品" }}</div>
+                <span class="status-badge status-{% if order.status == 1 %}pending{% elif order.status == 2 %}processing{% elif order.status == 3 %}completed{% endif %}">
+                    {% if order.status == 1 %}待处理
+                    {% elif order.status == 2 %}处理中
+                    {% elif order.status == 3 %}已完成
+                    {% else %}未知{% endif %}
+                </span>
+            </div>
+            <div style="font-size: 12px; color: #666; margin-bottom: 8px;">
+                订单号：{{ order.order_no }} | 客户：{{ order.customer_name|default:"未知" }}
+            </div>
+            <div style="font-size: 12px; color: #666;">
+                数量：{{ order.quantity|default:"-" }} | 交期：{% if order.delivery_date %}{{ order.delivery_date|date:"Y-m-d" }}{% else %}未设置{% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        
+        <!-- 分页 -->
+        {% if orders.has_other_pages %}
+        <div style="text-align: center; margin-top: 20px;">
+            {% if orders.has_previous %}
+                <a href="?page={{ orders.previous_page_number }}" class="btn btn-outline" style="margin-right: 10px;">上一页</a>
+            {% endif %}
+            
+            <span style="margin: 0 10px; color: #666;">
+                第 {{ orders.number }} / {{ orders.paginator.num_pages }} 页
+            </span>
+            
+            {% if orders.has_next %}
+                <a href="?page={{ orders.next_page_number }}" class="btn btn-outline" style="margin-left: 10px;">下一页</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% else %}
+        <div class="loading">
+            <div style="font-size: 16px; color: #666;">📋</div>
+            <div>暂无订单数据</div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- 快速操作按钮 -->
+<div style="text-align: center; margin-top: 20px;">
+    <button class="btn btn-primary" onclick="refreshOrders()">🔄 刷新订单</button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 显示订单详情
+function showOrderDetail(orderId) {
+    window.location.href = `/mobile/orders/${orderId}/`;
+}
+
+// 刷新订单列表
+function refreshOrders() {
+    showNotification('正在刷新订单列表...', 'info');
+    setTimeout(() => {
+        location.reload();
+    }, 500);
+}
+
+// 初始化页面
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('订单列表页面加载完成');
+    
+    // 可以在这里添加WebSocket连接来实时更新订单状态
+    initWebSocketConnection();
+});
+
+// 初始化WebSocket连接
+function initWebSocketConnection() {
+    if (typeof WebSocket !== 'undefined') {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/notifications/`;
+        
+        const socket = new WebSocket(wsUrl);
+        
+        socket.onopen = function(event) {
+            console.log('📱 手机端WebSocket连接成功');
+            showNotification('实时更新已连接', 'success');
+        };
+        
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log('📱 收到WebSocket消息:', data);
+            
+            if (data.type === 'progress_notification' || data.type === 'dashboard_update') {
+                showNotification('订单状态已更新', 'info');
+                // 延迟刷新，让用户看到通知
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            }
+        };
+        
+        socket.onclose = function(event) {
+            console.log('📱 WebSocket连接关闭');
+            showNotification('实时更新已断开', 'error');
+        };
+        
+        socket.onerror = function(error) {
+            console.error('📱 WebSocket错误:', error);
+        };
+    }
+}
+</script>
+{% endblock %} 

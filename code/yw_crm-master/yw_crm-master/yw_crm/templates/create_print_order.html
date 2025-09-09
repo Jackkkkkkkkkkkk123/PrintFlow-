@@ -1,0 +1,281 @@
+{% extends 'layout.html' %}
+
+<!-- 自动插入jQuery CDN -->
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-10 col-md-offset-1">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">创建印刷订单</h3>
+                </div>
+                <div class="panel-body">
+                    <form id="createOrderForm" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- 印刷类型选择 -->
+                        <div class="form-group">
+                            <label class="control-label">印刷类型 <span class="text-danger">*</span></label>
+                            <div class="radio-inline-group">
+                                <label class="radio-inline">
+                                    <input type="radio" name="print_type" value="cover" checked> 封面印刷
+                                </label>
+                                <label class="radio-inline">
+                                    <input type="radio" name="print_type" value="content"> 内文印刷
+                                </label>
+                                <label class="radio-inline">
+                                    <input type="radio" name="print_type" value="cover_content"> 封面+内文
+                                </label>
+
+                            </div>
+                        </div>
+                        
+                        <!-- 进度步骤选择 -->
+                        <div class="form-group">
+                            <label class="control-label">选择生产步骤</label>
+                            <div class="well" style="max-height: 300px; overflow-y: auto;">
+                                <div id="progress-steps">
+                                    <!-- 步骤将通过JavaScript动态加载 -->
+                                    <div class="text-muted">请先选择印刷类型...</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Excel文件上传 -->
+                        <div class="form-group">
+                            <label for="excel_file">选择Excel文件 <span class="text-danger">*</span></label>
+                            <input type="file" class="form-control" id="excel_file" name="excel_file" accept=".xls,.xlsx" required>
+                            <p class="help-block">请选择包含订单信息的Excel文件，支持封面印刷明细和内文印刷明细格式</p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fa fa-plus"></i> 创建订单
+                            </button>
+                            <a href="{% url 'print_order_list' %}" class="btn btn-default btn-lg">
+                                <i class="fa fa-arrow-left"></i> 返回列表
+                            </a>
+                        </div>
+                    </form>
+                    
+                    <div id="result" style="display: none;">
+                        <div class="alert" id="resultAlert">
+                            <h4>创建结果</h4>
+                            <div id="resultMessage"></div>
+                            <div id="resultData"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// CSRF token 处理
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
+
+$.ajaxSetup({
+    headers: { "X-CSRFToken": csrftoken }
+});
+
+// 基于实际印刷流程的进度步骤模板（与样例文件一致）
+const progressTemplates = {
+    'cover': [
+        {name: '印刷', description: '封面印刷', required: true},
+        {name: '覆膜', description: '覆膜工艺', required: false},
+        {name: '烫金', description: '烫金工艺', required: false},
+        {name: '压痕', description: '压痕工艺', required: false},
+        {name: '压纹', description: '压纹工艺', required: false},
+        {name: '模切', description: '模切工艺', required: false},
+        {name: '击凸', description: '击凸工艺', required: false},
+        {name: '过油', description: '过油工艺', required: false},
+        {name: '外调', description: '外调加工', required: false}
+    ],
+    'content': [
+        {name: '调图', description: '图像调整', required: true},
+        {name: 'CTP', description: 'CTP制版', required: true},
+        {name: '切纸', description: '切纸准备', required: true},
+        {name: '印刷', description: '内文印刷', required: true},
+        {name: '折页', description: '折页工序', required: false},
+        {name: '锁线', description: '锁线装订', required: false},
+        {name: '胶包', description: '胶装包书', required: false},
+        {name: '马订', description: '马订装订', required: false},
+        {name: '勒口', description: '勒口工艺', required: false},
+        {name: '夹卡片', description: '夹卡片', required: false},
+        {name: '配本(塑封)', description: '配本塑封', required: false},
+        {name: '打包', description: '打包工序', required: true},
+        {name: '送货', description: '送货配送', required: true}
+    ],
+    'cover_content': [
+        {name: '印刷', description: '封面印刷', required: true},
+        {name: '覆膜', description: '覆膜工艺', required: false},
+        {name: '烫金', description: '烫金工艺', required: false},
+        {name: '压痕', description: '压痕工艺', required: false},
+        {name: '压纹', description: '压纹工艺', required: false},
+        {name: '模切', description: '模切工艺', required: false},
+        {name: '击凸', description: '击凸工艺', required: false},
+        {name: '过油', description: '过油工艺', required: false},
+        {name: '外调', description: '外调加工', required: false},
+        {name: '调图', description: '图像调整', required: true},
+        {name: 'CTP', description: 'CTP制版', required: true},
+        {name: '切纸', description: '切纸准备', required: true},
+        {name: '印刷', description: '内文印刷', required: true},
+        {name: '折页', description: '折页工序', required: false},
+        {name: '锁线', description: '锁线装订', required: false},
+        {name: '胶包', description: '胶装包书', required: false},
+        {name: '马订', description: '马订装订', required: false},
+        {name: '勒口', description: '勒口工艺', required: false},
+        {name: '夹卡片', description: '夹卡片', required: false},
+        {name: '配本(塑封)', description: '配本塑封', required: false},
+        {name: '打包', description: '打包工序', required: true},
+        {name: '送货', description: '送货配送', required: true}
+    ],
+
+
+};
+
+function loadProgressSteps(printType) {
+    const steps = progressTemplates[printType] || [];
+    let html = '';
+    
+    if (steps.length === 0) {
+        html = '<div class="text-muted">没有可选择的步骤</div>';
+    } else {
+        html = '<div class="row">';
+        steps.forEach((step, index) => {
+            const checked = step.required ? 'checked' : '';
+            const disabled = step.required ? 'disabled' : '';
+            html += `
+                <div class="col-md-6 col-sm-12" style="margin-bottom: 10px;">
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="progress_steps" value="${index}" ${checked} ${disabled}>
+                            <strong>${step.name}</strong>
+                            ${step.required ? '<span class="text-danger">(必需)</span>' : '<span class="text-muted">(可选)</span>'}
+                            <br><small class="text-muted">${step.description}</small>
+                        </label>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+    }
+    
+    $('#progress-steps').html(html);
+}
+
+$(document).ready(function() {
+    // 当印刷类型改变时，更新进度步骤
+    $('input[name="print_type"]').on('change', function() {
+        const printType = $(this).val();
+        loadProgressSteps(printType);
+    });
+    
+    // 初始加载封面印刷步骤
+    loadProgressSteps('cover');
+    
+    // 表单提交处理
+    $('#createOrderForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        // 检查是否选择了文件
+        if (!$('#excel_file')[0].files.length) {
+            alert('请选择Excel文件');
+            return;
+        }
+        
+        // 检查是否至少选择了一个步骤
+        const selectedSteps = $('input[name="progress_steps"]:checked').length;
+        if (selectedSteps === 0) {
+            alert('请至少选择一个生产步骤');
+            return;
+        }
+        
+        // 收集选中的步骤
+        const printType = $('input[name="print_type"]:checked').val();
+        const steps = progressTemplates[printType];
+        const selectedStepIndexes = [];
+        $('input[name="progress_steps"]:checked').each(function() {
+            selectedStepIndexes.push(parseInt($(this).val()));
+        });
+        
+        // 创建FormData
+        var formData = new FormData(this);
+        formData.append('selected_steps', JSON.stringify(selectedStepIndexes));
+        
+        // 显示加载状态
+        $('button[type="submit"]').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> 正在创建...');
+        
+        $.ajax({
+            url: '{% url "create_print_order" %}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.status) {
+                    $('#resultAlert').removeClass('alert-danger').addClass('alert-success');
+                    $('#resultMessage').html('<strong>成功：</strong>' + response.message);
+                    if (response.order_no) {
+                        $('#resultData').html('<strong>订单编号：</strong>' + response.order_no);
+                    }
+                    $('#result').show();
+                    setTimeout(function() {
+                        window.location.href = '{% url "print_order_list" %}';
+                    }, 2000);
+                } else {
+                    $('#resultAlert').removeClass('alert-success').addClass('alert-danger');
+                    $('#resultMessage').html('<strong>错误：</strong>' + response.message);
+                    $('#resultData').html('');
+                    $('#result').show();
+                }
+            },
+            error: function() {
+                $('#resultAlert').removeClass('alert-success').addClass('alert-danger');
+                $('#resultMessage').html('<strong>错误：</strong>上传失败，请重试');
+                $('#resultData').html('');
+                $('#result').show();
+            },
+            complete: function() {
+                $('button[type="submit"]').prop('disabled', false).html('<i class="fa fa-plus"></i> 创建订单');
+            }
+        });
+    });
+});
+</script>
+
+<style>
+.radio-inline-group {
+    margin-top: 5px;
+}
+.radio-inline {
+    margin-right: 20px;
+}
+.checkbox {
+    margin-bottom: 5px;
+}
+.well {
+    background-color: #f9f9f9;
+    border: 1px solid #e3e3e3;
+    border-radius: 4px;
+    padding: 15px;
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,179 @@
+{% extends 'mobile/base.html' %}
+{% load static %}
+
+{% block title %}仪表板 - 华龙印务管理系统{% endblock %}
+{% block header_title %}仪表板{% endblock %}
+
+{% block content %}
+<!-- 统计卡片 -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ total_orders }}</div>
+        <div class="stat-label">总订单</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ pending_orders }}</div>
+        <div class="stat-label">待处理</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ processing_orders }}</div>
+        <div class="stat-label">处理中</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ completed_orders }}</div>
+        <div class="stat-label">已完成</div>
+    </div>
+</div>
+
+<!-- 今日概况 -->
+<div class="card">
+    <div class="card-title">📊 今日概况</div>
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+        <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+            <div style="font-size: 20px; font-weight: bold; color: #28a745;">{{ today_completed }}</div>
+            <div style="font-size: 12px; color: #666;">今日完成步骤</div>
+        </div>
+        <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+            <div style="font-size: 20px; font-weight: bold; color: #dc3545;">{{ urgent_orders|length }}</div>
+            <div style="font-size: 12px; color: #666;">紧急订单</div>
+        </div>
+    </div>
+</div>
+
+<!-- 当前进行中的步骤 -->
+<div class="card">
+    <div class="card-title">🔄 进行中的步骤</div>
+    {% if current_steps %}
+        {% for step in current_steps %}
+        <div class="list-item">
+            <div class="list-item-header">
+                <div class="list-item-title">{{ step.order.product_name|default:"未命名产品" }} - {{ step.step_name }}</div>
+                <span class="status-badge status-processing">进行中</span>
+            </div>
+            <div style="font-size: 12px; color: #666;">
+                订单号：{{ step.order.order_no }} | 操作员：{{ step.operator.username|default:"未分配" }}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div style="text-align: center; padding: 20px; color: #666;">
+            暂无进行中的步骤
+        </div>
+    {% endif %}
+</div>
+
+<!-- 待开始的步骤 -->
+<div class="card">
+    <div class="card-title">⏳ 待开始的步骤</div>
+    {% if next_steps %}
+        {% for step in next_steps|slice:":5" %}
+        <div class="list-item">
+            <div class="list-item-header">
+                <div class="list-item-title">{{ step.order.product_name|default:"未命名产品" }} - {{ step.step_name }}</div>
+                <span class="status-badge status-pending">待开始</span>
+            </div>
+            <div style="font-size: 12px; color: #666;">
+                订单号：{{ step.order.order_no }}
+            </div>
+        </div>
+        {% endfor %}
+        {% if next_steps|length > 5 %}
+        <div style="text-align: center; margin-top: 10px;">
+            <a href="{% url 'mobile_orders' %}" class="btn btn-outline">查看全部 {{ next_steps|length }} 个待处理步骤</a>
+        </div>
+        {% endif %}
+    {% else %}
+        <div style="text-align: center; padding: 20px; color: #666;">
+            暂无待开始的步骤
+        </div>
+    {% endif %}
+</div>
+
+<!-- 紧急订单 -->
+{% if urgent_orders %}
+<div class="card">
+    <div class="card-title">🚨 紧急订单</div>
+    {% for order in urgent_orders %}
+    <div class="list-item" style="border-left: 3px solid #dc3545;">
+        <div class="list-item-header">
+            <div class="list-item-title">{{ order.product_name|default:"未命名产品" }}</div>
+            <span class="status-badge status-{% if order.status == 1 %}pending{% elif order.status == 2 %}processing{% endif %}">
+                {% if order.status == 1 %}待处理{% elif order.status == 2 %}处理中{% endif %}
+            </span>
+        </div>
+        <div style="font-size: 12px; color: #dc3545;">
+            订单号：{{ order.order_no }} | 交期：{{ order.delivery_date|date:"Y-m-d" }}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- 快速操作按钮 -->
+<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 20px;">
+    <a href="{% url 'mobile_orders' %}" class="btn btn-primary">📋 查看订单</a>
+    <a href="{% url 'mobile_ai_assistant' %}" class="btn btn-outline">🤖 AI助手</a>
+</div>
+
+<div style="text-align: center; margin-top: 15px;">
+    <button class="btn btn-outline" onclick="refreshDashboard()">🔄 刷新数据</button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 刷新仪表板
+function refreshDashboard() {
+    showNotification('正在刷新仪表板数据...', 'info');
+    setTimeout(() => {
+        location.reload();
+    }, 500);
+}
+
+// 初始化页面
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('仪表板页面加载完成');
+    
+    // 初始化WebSocket连接来实时更新数据
+    initWebSocketConnection();
+});
+
+// 初始化WebSocket连接
+function initWebSocketConnection() {
+    if (typeof WebSocket !== 'undefined') {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/notifications/`;
+        
+        const socket = new WebSocket(wsUrl);
+        
+        socket.onopen = function(event) {
+            console.log('📊 仪表板WebSocket连接成功');
+            showNotification('实时更新已连接', 'success');
+        };
+        
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log('📊 收到WebSocket消息:', data);
+            
+            // 仪表板对所有类型的更新都感兴趣
+            if (data.type === 'progress_notification' || data.type === 'dashboard_update') {
+                showNotification('数据已更新', 'info');
+                // 延迟刷新，让用户看到通知
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            }
+        };
+        
+        socket.onclose = function(event) {
+            console.log('📊 WebSocket连接关闭');
+            showNotification('实时更新已断开', 'error');
+        };
+        
+        socket.onerror = function(error) {
+            console.error('📊 WebSocket错误:', error);
+        };
+    }
+}
+</script>
+{% endblock %} 

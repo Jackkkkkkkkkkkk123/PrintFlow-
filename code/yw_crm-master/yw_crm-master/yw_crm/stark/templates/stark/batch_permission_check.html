@@ -1,0 +1,335 @@
+{% extends 'layout.html' %}
+
+{% block css %}
+<style>
+.batch-check-container {
+    margin: 20px;
+}
+
+.stats-dashboard {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+    min-width: 150px;
+}
+
+.stat-number {
+    font-size: 32px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.stat-number.total { color: #007bff; }
+.stat-number.issues { color: #dc3545; }
+.stat-number.noroles { color: #ffc107; }
+.stat-number.normal { color: #28a745; }
+
+.stat-label {
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.user-table {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.user-table table {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.user-table th {
+    background: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    padding: 15px;
+    font-weight: 600;
+}
+
+.user-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-normal {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.role-tag {
+    display: inline-block;
+    background: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    margin-right: 3px;
+    margin-bottom: 3px;
+}
+
+.issue-tag {
+    display: inline-block;
+    background: #f8d7da;
+    color: #721c24;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    margin-right: 3px;
+}
+
+.btn-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.btn-actions .btn {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.filter-tabs {
+    margin-bottom: 20px;
+}
+
+.filter-tabs .nav-tabs {
+    border-bottom: 2px solid #dee2e6;
+}
+
+.filter-tabs .nav-tabs .nav-link {
+    border: none;
+    color: #6c757d;
+    padding: 10px 20px;
+}
+
+.filter-tabs .nav-tabs .nav-link.active {
+    color: #007bff;
+    border-bottom: 2px solid #007bff;
+    background: none;
+}
+
+.permission-summary {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.no-data {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="batch-check-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fa fa-users"></i> 批量权限检查</h2>
+        <a href="javascript:history.back()" class="btn btn-default">
+            <i class="fa fa-arrow-left"></i> 返回用户列表
+        </a>
+    </div>
+    
+    <!-- 统计仪表板 -->
+    <div class="stats-dashboard">
+        <div class="stat-card">
+            <div class="stat-number total">{{ total_users }}</div>
+            <div class="stat-label">总用户数</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number normal">{{ normal_users }}</div>
+            <div class="stat-label">正常用户</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number issues">{{ users_with_issues }}</div>
+            <div class="stat-label">存在问题</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number noroles">{{ users_without_roles }}</div>
+            <div class="stat-label">无角色分配</div>
+        </div>
+    </div>
+    
+    <!-- 过滤选项卡 -->
+    <div class="filter-tabs">
+        <ul class="nav nav-tabs" id="filterTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="all-tab" data-toggle="tab" href="#all" role="tab">
+                    全部用户 ({{ total_users }})
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="issues-tab" data-toggle="tab" href="#issues" role="tab">
+                    存在问题 ({{ users_with_issues }})
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="noroles-tab" data-toggle="tab" href="#noroles" role="tab">
+                    无角色 ({{ users_without_roles }})
+                </a>
+            </li>
+        </ul>
+    </div>
+    
+    <!-- 用户列表 -->
+    <div class="tab-content" id="filterTabsContent">
+        <!-- 全部用户 -->
+        <div class="tab-pane fade show active" id="all" role="tabpanel">
+            <div class="user-table">
+                {% include 'stark/user_table.html' with users=user_analysis %}
+            </div>
+        </div>
+        
+        <!-- 存在问题的用户 -->
+        <div class="tab-pane fade" id="issues" role="tabpanel">
+            <div class="user-table">
+                {% with issues_users=user_analysis|dictsort:"issues" %}
+                    {% include 'stark/user_table.html' with users=issues_users filter_issues=True %}
+                {% endwith %}
+            </div>
+        </div>
+        
+        <!-- 无角色用户 -->
+        <div class="tab-pane fade" id="noroles" role="tabpanel">
+            <div class="user-table">
+                {% with noroles_users=user_analysis|dictsort:"roles" %}
+                    {% include 'stark/user_table.html' with users=noroles_users filter_noroles=True %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 操作建议 -->
+    <div class="mt-4">
+        <div class="alert alert-info">
+            <h5><i class="fa fa-info-circle"></i> 操作建议</h5>
+            <ul class="mb-0">
+                <li>对于无角色分配的用户，请前往 <a href="/rbac/distribute/permissions/" target="_blank">权限分配页面</a> 为其分配合适的角色</li>
+                <li>对于存在权限问题的用户，请点击"详细检查"按钮查看具体问题</li>
+                <li>建议定期执行批量权限检查，确保系统权限配置正确</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- 用户表格模板 -->
+<script type="text/html" id="user-table-template">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th width="10%">用户名</th>
+                <th width="10%">真实姓名</th>
+                <th width="10%">部门</th>
+                <th width="20%">角色</th>
+                <th width="15%">权限统计</th>
+                <th width="15%">状态</th>
+                <th width="20%">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for analysis in users %}
+                {% if not filter_issues or analysis.issues %}
+                    {% if not filter_noroles or not analysis.roles.exists %}
+                        <tr>
+                            <td>{{ analysis.user.username }}</td>
+                            <td>{{ analysis.user.name }}</td>
+                            <td>{{ analysis.user.department }}</td>
+                            <td>
+                                {% for role in analysis.roles %}
+                                    <span class="role-tag">{{ role.title }}</span>
+                                {% empty %}
+                                    <span class="text-muted">无角色</span>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                <div class="permission-summary">
+                                    基础权限: {{ analysis.basic_perm_count }}个<br>
+                                    工序权限: {{ analysis.step_perm_count }}个
+                                </div>
+                            </td>
+                            <td>
+                                {% if analysis.status == 'normal' %}
+                                    <span class="status-badge status-normal">正常</span>
+                                {% else %}
+                                    <span class="status-badge status-warning">异常</span>
+                                    <div class="mt-1">
+                                        {% for issue in analysis.issues %}
+                                            <span class="issue-tag">{{ issue }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-actions">
+                                    <a href="/stark/crm/userinfo/permission/check/{{ analysis.user.id }}/" 
+                                       class="btn btn-info btn-sm">
+                                        <i class="fa fa-search"></i> 详细检查
+                                    </a>
+                                    <a href="/stark/crm/userinfo/{{ analysis.user.id }}/change/" 
+                                       class="btn btn-primary btn-sm">
+                                        <i class="fa fa-edit"></i> 编辑
+                                    </a>
+                                    <a href="/rbac/distribute/permissions/?uid={{ analysis.user.id }}" 
+                                       class="btn btn-success btn-sm" target="_blank">
+                                        <i class="fa fa-cog"></i> 分配权限
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                {% endif %}
+            {% empty %}
+                <tr>
+                    <td colspan="7" class="no-data">
+                        <i class="fa fa-info-circle"></i> 暂无数据
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</script>
+
+<!-- 引入表格模板 -->
+{% include 'stark/user_table.html' %}
+
+{% endblock %}
+
+{% block js %}
+<script>
+$(document).ready(function() {
+    // 处理选项卡切换
+    $('#filterTabs a').click(function(e) {
+        e.preventDefault();
+        $(this).tab('show');
+    });
+    
+    // 添加搜索功能
+    $('#userSearch').on('keyup', function() {
+        var value = $(this).val().toLowerCase();
+        $('#userTable tr').filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+        });
+    });
+});
+</script>
+{% endblock %} 

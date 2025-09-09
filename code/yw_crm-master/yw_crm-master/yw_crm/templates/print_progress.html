@@ -1,0 +1,169 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">印刷进度管理 - {{ print_process.get_process_type_display }}</h3>
+                    <div class="panel-actions">
+                        <a href="{% url 'print_order_detail' print_process.print_order.id %}" class="btn btn-default">返回订单详情</a>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <!-- 当前步骤 -->
+                    {% if current_step %}
+                    <div class="alert alert-info">
+                        <h4>当前待确认步骤</h4>
+                        <div class="current-step">
+                            <span class="step-number">{{ current_step.step_order }}</span>
+                            <span class="step-name">{{ current_step.step_name }}</span>
+                            <button class="btn btn-success" onclick="confirmStep({{ current_step.id }})">
+                                确认完成
+                            </button>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-success">
+                        <h4>所有步骤已完成！</h4>
+                        <p>该印刷流程的所有步骤都已确认完成。</p>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- 步骤列表 -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>步骤列表</h4>
+                            <div class="steps-container">
+                                {% for step in progress_steps %}
+                                <div class="step-item {% if step.status == 2 %}completed{% elif step.status == 1 %}pending{% else %}skipped{% endif %}">
+                                    <div class="step-header">
+                                        <span class="step-number">{{ step.step_order }}</span>
+                                        <span class="step-name">{{ step.step_name }}</span>
+                                        <span class="step-status label label-{% if step.status == 1 %}warning{% elif step.status == 2 %}success{% else %}default{% endif %}">
+                                            {{ step.get_status_display }}
+                                        </span>
+                                    </div>
+                                    <div class="step-details">
+                                        {% if step.status == 2 %}
+                                        <p><strong>确认时间：</strong>{{ step.confirm_time|date:"Y-m-d H:i" }}</p>
+                                        <p><strong>确认人：</strong>{{ step.confirm_user.name|default:"系统" }}</p>
+                                        {% endif %}
+                                        {% if step.note %}
+                                        <p><strong>备注：</strong>{{ step.note }}</p>
+                                        {% endif %}
+                                    </div>
+                                    {% if step.status == 1 %}
+                                    <div class="step-actions">
+                                        <button class="btn btn-sm btn-success" onclick="confirmStep({{ step.id }})">
+                                            确认完成
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmStep(stepId) {
+    if (confirm('确认完成此步骤吗？')) {
+        $.ajax({
+            url: '/confirm-step/' + stepId + '/',
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.status) {
+                    alert('步骤确认成功！');
+                    if (response.next_step) {
+                        alert('下一个随机步骤：' + response.next_step.name);
+                    } else {
+                        alert('所有步骤已完成！');
+                    }
+                    location.reload();
+                } else {
+                    alert('确认失败：' + response.message);
+                }
+            },
+            error: function() {
+                alert('确认失败，请重试');
+            }
+        });
+    }
+}
+</script>
+
+<style>
+.current-step {
+    padding: 15px;
+    background-color: #d9edf7;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+.step-number {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    background-color: #337ab7;
+    color: white;
+    border-radius: 50%;
+    margin-right: 15px;
+    font-weight: bold;
+}
+
+.step-name {
+    font-size: 18px;
+    font-weight: bold;
+    margin-right: 15px;
+}
+
+.steps-container {
+    margin-top: 20px;
+}
+
+.step-item {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    padding: 15px;
+    background-color: #f9f9f9;
+}
+
+.step-item.completed {
+    background-color: #dff0d8;
+    border-color: #d6e9c6;
+}
+
+.step-item.pending {
+    background-color: #fcf8e3;
+    border-color: #faebcc;
+}
+
+.step-header {
+    margin-bottom: 10px;
+}
+
+.step-details {
+    margin: 10px 0;
+    padding: 10px;
+    background-color: white;
+    border-radius: 3px;
+}
+
+.step-actions {
+    margin-top: 10px;
+}
+</style>
+{% endblock %} 

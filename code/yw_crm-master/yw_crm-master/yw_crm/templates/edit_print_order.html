@@ -1,0 +1,387 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container" style="max-width:1100px;">
+    <h2 style="text-align:center;">编辑订单</h2>
+    <form method="post">
+        {% csrf_token %}
+        <table class="table table-bordered" style="font-size:14px;">
+            <tr>
+                <th>订单单号</th>
+                <td><input type="text" class="form-control" name="order_no" value="{{ order.order_no }}" readonly></td>
+                <th>委印日期</th>
+                <td><input type="date" class="form-control" name="order_date" value="{{ order.order_date|date:'Y-m-d' }}"></td>
+                <th>交货日期</th>
+                <td><input type="date" class="form-control" name="delivery_date" value="{{ order.delivery_date|date:'Y-m-d' }}"></td>
+            </tr>
+            <tr>
+                <th>客户名称</th>
+                <td><input type="text" class="form-control" name="customer_name" value="{{ order.customer_name }}"></td>
+                <th>工单号</th>
+                <td><input type="text" class="form-control" name="work_order_no" value="{{ order.work_order_no }}"></td>
+                <th>订单数量</th>
+                <td><input type="number" class="form-control" name="quantity" value="{{ order.quantity }}"></td>
+            </tr>
+            <tr>
+                <th>印品名称</th>
+                <td colspan="5"><input type="text" class="form-control" name="product_name" value="{{ order.product_name }}"></td>
+            </tr>
+            <tr>
+                <th>单位</th>
+                <td><input type="text" class="form-control" name="unit" value="{{ order.unit }}"></td>
+                <th>业务员</th>
+                <td><input type="text" class="form-control" name="salesman" value="{{ order.salesman }}"></td>
+                <th>联系人</th>
+                <td><input type="text" class="form-control" name="contact_person" value="{{ order.contact_person }}"></td>
+            </tr>
+            <tr>
+                <th>联系方式</th>
+                <td><input type="text" class="form-control" name="contact_phone" value="{{ order.contact_phone }}"></td>
+                <th>成品尺寸</th>
+                <td colspan="3"><input type="text" class="form-control" name="product_size" value="{{ order.product_size }}"></td>
+            </tr>
+            <tr>
+                <th>设计制作要求</th>
+                <td colspan="5"><textarea class="form-control" name="design_requirement">{{ order.design_requirement }}</textarea></td>
+            </tr>
+            <tr>
+                <th>产品描述</th>
+                <td colspan="5"><textarea class="form-control" name="product_description">{{ order.product_description }}</textarea></td>
+            </tr>
+            <tr>
+                <th>拼晒要求</th>
+                <td colspan="5"><textarea class="form-control" name="imposition_requirement">{{ order.imposition_requirement }}</textarea></td>
+            </tr>
+            <tr>
+                <th>客户提供</th>
+                <td colspan="5"><textarea class="form-control" name="customer_supply">{{ order.customer_supply }}</textarea></td>
+            </tr>
+            <tr>
+                <th>消耗要求</th>
+                <td colspan="5"><textarea class="form-control" name="consumption_requirement">{{ order.consumption_requirement }}</textarea></td>
+            </tr>
+            <tr>
+                <th>印刷工艺要求</th>
+                <td colspan="5"><textarea class="form-control" name="print_tech_requirement">{{ order.print_tech_requirement }}</textarea></td>
+            </tr>
+            <tr>
+                <th>质量要求</th>
+                <td colspan="5"><textarea class="form-control" name="quality_requirement">{{ order.quality_requirement }}</textarea></td>
+            </tr>
+            <tr>
+                <th>送货和包装要求</th>
+                <td colspan="5"><textarea class="form-control" name="delivery_pack_requirement">{{ order.delivery_pack_requirement }}</textarea></td>
+            </tr>
+            <tr>
+                <th>备注</th>
+                <td colspan="5"><textarea class="form-control" name="note">{{ order.note }}</textarea></td>
+            </tr>
+            <tr>
+                <th>客户签字</th>
+                <td><input type="text" class="form-control" name="customer_signature" value="{{ order.customer_signature }}"></td>
+                <th>制单员</th>
+                <td><input type="text" class="form-control" name="order_maker" value="{{ order.order_maker }}"></td>
+                <th>审核人</th>
+                <td><input type="text" class="form-control" name="auditor" value="{{ order.auditor }}"></td>
+            </tr>
+        </table>
+
+        <!-- 明细区编辑 -->
+        <div style="margin-top: 30px;">
+            <h3>明细信息编辑</h3>
+            
+            <!-- 用料明细编辑 -->
+            <h4 style="margin-top: 25px; color: #2c3e50;">用料明细</h4>
+            <div id="material-details">
+                <table class="table table-bordered" style="font-size: 12px;">
+                    <thead>
+                        <tr style="background-color: #f8f9fa;">
+                            <th width="40">序</th>
+                            <th width="100">项目</th>
+                            <th width="120">材料名称</th>
+                            <th width="100">规格</th>
+                            <th width="60">页数</th>
+                            <th width="60">开数</th>
+                            <th width="60">正数</th>
+                            <th width="60">放数</th>
+                            <th width="80">总数</th>
+                            <th width="80">吨价</th>
+                            <th width="80">单价</th>
+                            <th width="80">金额</th>
+                            <th width="50">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="material-tbody">
+                        <!-- 用料明细行将通过JavaScript动态生成 -->
+                    </tbody>
+                </table>
+                <button type="button" class="btn btn-sm btn-success" onclick="addMaterialRow()">+ 添加用料明细</button>
+            </div>
+
+            <!-- 印前明细编辑 -->
+            <h4 style="margin-top: 25px; color: #2c3e50;">印前明细</h4>
+            <div id="prepress-details">
+                <table class="table table-bordered" style="font-size: 12px;">
+                    <thead>
+                        <tr style="background-color: #f8f9fa;">
+                            <th width="40">序</th>
+                            <th width="120">项目</th>
+                            <th width="100">内容</th>
+                            <th width="100">规格</th>
+                            <th width="100">制版名称</th>
+                            <th width="100">备注</th>
+                            <th width="80">数量</th>
+                            <th width="60">单位</th>
+                            <th width="80">单价</th>
+                            <th width="80">金额</th>
+                            <th width="50">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="prepress-tbody">
+                        <!-- 印前明细行将通过JavaScript动态生成 -->
+                    </tbody>
+                </table>
+                <button type="button" class="btn btn-sm btn-success" onclick="addPrepressRow()">+ 添加印前明细</button>
+            </div>
+
+            <!-- 印刷明细编辑 -->
+            <h4 style="margin-top: 25px; color: #2c3e50;">印刷明细</h4>
+            <div id="process-details">
+                <table class="table table-bordered" style="font-size: 12px;">
+                    <thead>
+                        <tr style="background-color: #f8f9fa;">
+                            <th width="40">序</th>
+                            <th width="120">项目</th>
+                            <th width="80">印色</th>
+                            <th width="100">印刷尺寸</th>
+                            <th width="100">印刷方式</th>
+                            <th width="80">机台</th>
+                            <th width="80">数量</th>
+                            <th width="60">单位</th>
+                            <th width="80">单价</th>
+                            <th width="80">金额</th>
+                            <th width="50">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="process-tbody">
+                        <!-- 印刷明细行将通过JavaScript动态生成 -->
+                    </tbody>
+                </table>
+                <button type="button" class="btn btn-sm btn-success" onclick="addProcessRow()">+ 添加印刷明细</button>
+            </div>
+
+            <!-- 印后明细编辑 -->
+            <h4 style="margin-top: 25px; color: #2c3e50;">印后明细</h4>
+            <div id="postpress-details">
+                <table class="table table-bordered" style="font-size: 12px;">
+                    <thead>
+                        <tr style="background-color: #f8f9fa;">
+                            <th width="40">序</th>
+                            <th width="120">项目</th>
+                            <th width="120">加工内容</th>
+                            <th width="80">工序</th>
+                            <th width="100">规格</th>
+                            <th width="80">机台</th>
+                            <th width="80">数量</th>
+                            <th width="80">单价</th>
+                            <th width="80">金额</th>
+                            <th width="50">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="postpress-tbody">
+                        <!-- 印后明细行将通过JavaScript动态生成 -->
+                    </tbody>
+                </table>
+                <button type="button" class="btn btn-sm btn-success" onclick="addPostpressRow()">+ 添加印后明细</button>
+            </div>
+        </div>
+
+        <div style="text-align:center;margin-top:30px;">
+            <button type="submit" class="btn btn-success btn-lg">保存订单</button>
+            <a href="{% url 'print_order_detail' order.id %}" class="btn btn-primary">查看详情</a>
+            <a href="{% url 'print_order_list' %}" class="btn btn-default">返回列表</a>
+        </div>
+    </form>
+</div>
+<style>
+    table th, table td { text-align: center; vertical-align: middle; }
+    textarea.form-control { min-height: 60px; }
+    .detail-input { font-size: 11px; padding: 2px 4px; }
+    .detail-table th { font-size: 11px; padding: 4px; }
+    .detail-table td { padding: 2px; }
+</style>
+
+<script>
+// 原始JSON数据
+let materialData = {{ order.material_json|default:"[]"|safe }};
+let prepressData = {{ order.prepress_json|default:"[]"|safe }};
+let processData = {{ order.process_json|default:"[]"|safe }};
+let postpressData = {{ order.postpress_json|default:"[]"|safe }};
+
+// 页面加载时初始化表格
+document.addEventListener('DOMContentLoaded', function() {
+    loadMaterialData();
+    loadPrepressData();
+    loadProcessData();
+    loadPostpressData();
+});
+
+// 加载用料明细数据
+function loadMaterialData() {
+    const tbody = document.getElementById('material-tbody');
+    tbody.innerHTML = '';
+    materialData.forEach((item, index) => {
+        tbody.innerHTML += createMaterialRow(index, item);
+    });
+    if (materialData.length === 0) {
+        addMaterialRow();
+    }
+}
+
+// 创建用料明细行
+function createMaterialRow(index, data = {}) {
+    return `
+        <tr>
+            <td><input type="text" class="form-control detail-input" name="material[${index}][序]" value="${data['序'] || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="material[${index}][项目]" value="${data['项目'] || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="material[${index}][材料名称]" value="${data['材料名称'] || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="material[${index}][规格]" value="${data['规格'] || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="material[${index}][页数]" value="${data['页数'] || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="material[${index}][开数]" value="${data['开数'] || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="material[${index}][正数]" value="${data['正数'] || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="material[${index}][放数]" value="${data['放数'] || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="material[${index}][总数]" value="${data['总数'] || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="material[${index}][吨价]" value="${data['吨价'] || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="material[${index}][单价]" value="${data['单价'] || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="material[${index}][金额]" value="${data['金额'] || ''}" /></td>
+            <td><button type="button" class="btn btn-xs btn-danger" onclick="removeRow(this)">删除</button></td>
+        </tr>
+    `;
+}
+
+// 添加用料明细行
+function addMaterialRow() {
+    const tbody = document.getElementById('material-tbody');
+    const index = tbody.children.length;
+    tbody.innerHTML += createMaterialRow(index);
+}
+
+// 加载印前明细数据
+function loadPrepressData() {
+    const tbody = document.getElementById('prepress-tbody');
+    tbody.innerHTML = '';
+    prepressData.forEach((item, index) => {
+        tbody.innerHTML += createPrepressRow(index, item);
+    });
+    if (prepressData.length === 0) {
+        addPrepressRow();
+    }
+}
+
+// 创建印前明细行
+function createPrepressRow(index, data = {}) {
+    return `
+        <tr>
+            <td><input type="text" class="form-control detail-input" name="prepress[${index}][序]" value="${data['序'] || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="prepress[${index}][项目]" value="${data['项目'] || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="prepress[${index}][内容]" value="${data['内    容'] || data['内容'] || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="prepress[${index}][规格]" value="${data['规格'] || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="prepress[${index}][制版名称]" value="${data['制版名称'] || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="prepress[${index}][备注]" value="${data['备注'] || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="prepress[${index}][数量]" value="${data['数量'] || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="prepress[${index}][单位]" value="${data['单位'] || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="prepress[${index}][单价]" value="${data['单价'] || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="prepress[${index}][金额]" value="${data['金额'] || ''}" /></td>
+            <td><button type="button" class="btn btn-xs btn-danger" onclick="removeRow(this)">删除</button></td>
+        </tr>
+    `;
+}
+
+// 添加印前明细行
+function addPrepressRow() {
+    const tbody = document.getElementById('prepress-tbody');
+    const index = tbody.children.length;
+    tbody.innerHTML += createPrepressRow(index);
+}
+
+// 加载印刷明细数据
+function loadProcessData() {
+    const tbody = document.getElementById('process-tbody');
+    tbody.innerHTML = '';
+    processData.forEach((item, index) => {
+        tbody.innerHTML += createProcessRow(index, item);
+    });
+    if (processData.length === 0) {
+        addProcessRow();
+    }
+}
+
+// 创建印刷明细行
+function createProcessRow(index, data = {}) {
+    return `
+        <tr>
+            <td><input type="text" class="form-control detail-input" name="process[${index}][序]" value="${data.序 || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="process[${index}][项目]" value="${data.项目 || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="process[${index}][印色]" value="${data.印色 || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="process[${index}][印刷尺寸]" value="${data.印刷尺寸 || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="process[${index}][印刷方式]" value="${data.印刷方式 || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="process[${index}][机台]" value="${data.机台 || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="process[${index}][数量]" value="${data.数量 || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="process[${index}][单位]" value="${data.单位 || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="process[${index}][单价]" value="${data.单价 || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="process[${index}][金额]" value="${data.金额 || ''}" /></td>
+            <td><button type="button" class="btn btn-xs btn-danger" onclick="removeRow(this)">删除</button></td>
+        </tr>
+    `;
+}
+
+// 添加印刷明细行
+function addProcessRow() {
+    const tbody = document.getElementById('process-tbody');
+    const index = tbody.children.length;
+    tbody.innerHTML += createProcessRow(index);
+}
+
+// 加载印后明细数据
+function loadPostpressData() {
+    const tbody = document.getElementById('postpress-tbody');
+    tbody.innerHTML = '';
+    postpressData.forEach((item, index) => {
+        tbody.innerHTML += createPostpressRow(index, item);
+    });
+    if (postpressData.length === 0) {
+        addPostpressRow();
+    }
+}
+
+// 创建印后明细行
+function createPostpressRow(index, data = {}) {
+    return `
+        <tr>
+            <td><input type="text" class="form-control detail-input" name="postpress[${index}][序]" value="${data.序 || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="postpress[${index}][项目]" value="${data.项目 || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="postpress[${index}][加工内容]" value="${data.加工内容 || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="postpress[${index}][工序]" value="${data.工序 || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="postpress[${index}][规格]" value="${data.规格 || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="postpress[${index}][机台]" value="${data.机台 || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="postpress[${index}][数量]" value="${data.数量 || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="postpress[${index}][单价]" value="${data.单价 || ''}" /></td>
+            <td><input type="text" class="form-control detail-input" name="postpress[${index}][金额]" value="${data.金额 || ''}" /></td>
+            <td><button type="button" class="btn btn-xs btn-danger" onclick="removeRow(this)">删除</button></td>
+        </tr>
+    `;
+}
+
+// 添加印后明细行
+function addPostpressRow() {
+    const tbody = document.getElementById('postpress-tbody');
+    const index = tbody.children.length;
+    tbody.innerHTML += createPostpressRow(index);
+}
+
+// 删除行
+function removeRow(button) {
+    button.closest('tr').remove();
+}
+</script>
+{% endblock %} 

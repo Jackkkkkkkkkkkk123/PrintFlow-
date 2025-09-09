@@ -1,0 +1,381 @@
+<!-- 完成步骤模态框 -->
+<div class="modal fade" id="completeStepModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">完成步骤</h4>
+            </div>
+            <div class="modal-body">
+                <form id="completeStepForm">
+                    <div class="form-group">
+                        <label for="complete-note">完成备注：</label>
+                        <textarea class="form-control" id="complete-note" rows="3" placeholder="请输入完成备注（可选）"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-success" id="confirmComplete">确认完成</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 跳过步骤模态框 -->
+<div class="modal fade" id="skipStepModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">跳过步骤</h4>
+            </div>
+            <div class="modal-body">
+                <form id="skipStepForm">
+                    <div class="form-group">
+                        <label for="skip-reason">跳过原因：</label>
+                        <textarea class="form-control" id="skip-reason" rows="3" placeholder="请说明跳过该步骤的原因" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-warning" id="confirmSkip">确认跳过</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    let currentStepId = null;
+
+    // CSRF token 处理
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    $.ajaxSetup({
+        headers: { "X-CSRFToken": csrftoken }
+    });
+
+    // 开始步骤
+    $('.start-step').on('click', function() {
+        const stepId = $(this).data('step-id');
+        const $button = $(this);
+        
+        $button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> 开始中...');
+        
+        $.ajax({
+            url: `/progress/start/${stepId}/`,
+            type: 'POST',
+            success: function(response) {
+                if (response.status) {
+                    // 成功开始步骤
+                    updateStepToInProgress(stepId, response);
+                    alert(response.message || '步骤开始成功');
+                    location.reload(); // 刷新页面更新统计信息
+                } else if (response.need_confirmation) {
+                    // 需要确认 - 上个步骤有备注
+                    $button.prop('disabled', false).html('<i class="fa fa-play"></i> 开始');
+                    showPreviousStepNoteConfirmation(stepId, response.previous_step_name, response.previous_step_note);
+                } else {
+                    // 其他错误
+                    alert('操作失败: ' + (response.message || '未知错误'));
+                    $button.prop('disabled', false).html('<i class="fa fa-play"></i> 开始');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX错误:', {xhr, status, error});
+                let errorMessage = '网络错误，请重试';
+                
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                } else if (xhr.responseText) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorMessage = response.message || errorMessage;
+                    } catch (e) {
+                        errorMessage = xhr.responseText;
+                    }
+                }
+                
+                alert('操作失败: ' + errorMessage);
+                $button.prop('disabled', false).html('<i class="fa fa-play"></i> 开始');
+            }
+        });
+    });
+
+    // 完成步骤 - 显示模态框
+    $(document).on('click', '.complete-step', function() {
+        currentStepId = $(this).data('step-id');
+        $('#completeStepModal').modal('show');
+    });
+
+    // 确认完成步骤
+    $('#confirmComplete').on('click', function() {
+        const note = $('#complete-note').val();
+        
+        $.ajax({
+            url: `/progress/complete/${currentStepId}/`,
+            type: 'POST',
+            data: JSON.stringify({note: note}),
+            contentType: 'application/json',
+            success: function(response) {
+                if (response.status) {
+                    $('#completeStepModal').modal('hide');
+                    
+                    // 更新页面显示
+                    const $row = $(`#step-${currentStepId}`);
+                    $row.find('.step-status').removeClass('label-info').addClass('label-success').text('已完成');
+                    $row.find('.step-confirm-user').text(response.confirm_user || '-');
+                    $row.find('.step-end-time').text(response.end_time || '-');
+                    if (note) {
+                        $row.find('.step-note').text(note);
+                    }
+                    $row.find('.step-actions').html('<span class="text-success"><i class="fa fa-check-circle"></i> 已完成</span>');
+                    
+                    if (response.all_completed) {
+                        alert((response.message || '步骤完成成功') + '\n\n🎉 恭喜！所有步骤已完成！');
+                    } else {
+                        alert(response.message || '步骤完成成功');
+                    }
+                    location.reload(); // 刷新页面更新统计信息
+                } else {
+                    alert('操作失败: ' + (response.message || '未知错误'));
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX错误:', {xhr, status, error});
+                let errorMessage = '网络错误，请重试';
+                
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                } else if (xhr.responseText) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorMessage = response.message || errorMessage;
+                    } catch (e) {
+                        errorMessage = xhr.responseText;
+                    }
+                }
+                
+                alert('操作失败: ' + errorMessage);
+            }
+        });
+    });
+
+    // 跳过步骤 - 显示模态框
+    $(document).on('click', '.skip-step', function() {
+        currentStepId = $(this).data('step-id');
+        $('#skipStepModal').modal('show');
+    });
+
+    // 确认跳过步骤
+    $('#confirmSkip').on('click', function() {
+        const reason = $('#skip-reason').val();
+        
+        if (!reason.trim()) {
+            alert('请填写跳过原因');
+            return;
+        }
+        
+        $.ajax({
+            url: `/progress/skip/${currentStepId}/`,
+            type: 'POST',
+            data: JSON.stringify({reason: reason}),
+            contentType: 'application/json',
+            success: function(response) {
+                if (response.status) {
+                    $('#skipStepModal').modal('hide');
+                    
+                    // 更新页面显示
+                    const $row = $(`#step-${currentStepId}`);
+                    $row.find('.step-status').removeClass('label-info').addClass('label-warning').text('已跳过');
+                    $row.find('.step-confirm-user').text(response.confirm_user || '-');
+                    $row.find('.step-end-time').text(response.end_time || '-');
+                    $row.find('.step-note').text('跳过原因: ' + reason);
+                    $row.find('.step-actions').html('<span class="text-warning"><i class="fa fa-exclamation-circle"></i> 已跳过</span>');
+                    
+                    alert(response.message || '步骤跳过成功');
+                    location.reload(); // 刷新页面更新统计信息
+                } else {
+                    alert('操作失败: ' + (response.message || '未知错误'));
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX错误:', {xhr, status, error});
+                let errorMessage = '网络错误，请重试';
+                
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                } else if (xhr.responseText) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorMessage = response.message || errorMessage;
+                    } catch (e) {
+                        errorMessage = xhr.responseText;
+                    }
+                }
+                
+                alert('操作失败: ' + errorMessage);
+            }
+        });
+    });
+
+    // 模态框关闭时清空内容
+    $('#completeStepModal').on('hidden.bs.modal', function() {
+        $('#complete-note').val('');
+    });
+
+    $('#skipStepModal').on('hidden.bs.modal', function() {
+        $('#skip-reason').val('');
+    });
+
+    // 更新步骤为进行中状态
+    function updateStepToInProgress(stepId, response) {
+        const $row = $(`#step-${stepId}`);
+        $row.find('.step-status').removeClass('label-default').addClass('label-info').text('进行中');
+        $row.find('.step-operator').text(response.operator || '-');
+        $row.find('.step-start-time').text(response.start_time || '-');
+        $row.find('.step-actions').html(`
+            <button class="btn btn-sm btn-success complete-step" data-step-id="${stepId}">
+                <i class="fa fa-check"></i> 完成
+            </button>
+            <button class="btn btn-sm btn-warning skip-step" data-step-id="${stepId}">
+                <i class="fa fa-skip-forward"></i> 跳过
+            </button>
+        `);
+    }
+
+    // 显示上个步骤备注确认对话框
+    function showPreviousStepNoteConfirmation(stepId, previousStepName, previousStepNote) {
+        // 创建确认对话框HTML
+        const modalHtml = `
+            <div class="modal fade" id="previousStepNoteModal" tabindex="-1" role="dialog">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">
+                                <span>&times;</span>
+                            </button>
+                            <h4 class="modal-title">
+                                <i class="fa fa-exclamation-triangle text-warning"></i> 上个步骤留下备注
+                            </h4>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-warning">
+                                <h5><strong>步骤：${previousStepName}</strong></h5>
+                                <p><strong>备注内容：</strong></p>
+                                <div class="well" style="margin-top: 10px;">
+                                    ${previousStepNote}
+                                </div>
+                            </div>
+                            <p>请仔细查看上个步骤的备注信息，确认无误后再开始下个步骤。</p>
+                            <div class="text-center">
+                                <p class="text-muted">
+                                    <span id="countdown-display">5</span> 秒后可以确认开始
+                                </p>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                            <button type="button" class="btn btn-primary" id="confirmStartButton" disabled>
+                                <span id="countdown-text">请等待 <span id="countdown-seconds">5</span> 秒</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // 移除已存在的模态框并添加新的
+        $('#previousStepNoteModal').remove();
+        $('body').append(modalHtml);
+        
+        // 显示模态框
+        $('#previousStepNoteModal').modal('show');
+        
+        // 开始倒计时
+        let countdown = 5;
+        const countdownInterval = setInterval(function() {
+            countdown--;
+            $('#countdown-display').text(countdown);
+            $('#countdown-seconds').text(countdown);
+            
+            if (countdown <= 0) {
+                clearInterval(countdownInterval);
+                // 启用确认按钮
+                $('#confirmStartButton')
+                    .prop('disabled', false)
+                    .html('<i class="fa fa-play"></i> 确认开始步骤');
+            }
+        }, 1000);
+        
+        // 确认开始按钮点击事件
+        $('#confirmStartButton').off('click').on('click', function() {
+            if (!$(this).prop('disabled')) {
+                $('#previousStepNoteModal').modal('hide');
+                confirmStartStep(stepId);
+            }
+        });
+        
+        // 模态框关闭时清理倒计时
+        $('#previousStepNoteModal').on('hidden.bs.modal', function() {
+            clearInterval(countdownInterval);
+            $(this).remove();
+        });
+    }
+
+    // 确认开始步骤（当用户已查看备注后）
+    function confirmStartStep(stepId) {
+        const $button = $(`.start-step[data-step-id="${stepId}"]`);
+        $button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> 开始中...');
+        
+        $.ajax({
+            url: `/progress/confirm-start/${stepId}/`,
+            type: 'POST',
+            success: function(response) {
+                if (response.status) {
+                    updateStepToInProgress(stepId, response);
+                    alert(response.message || '步骤开始成功');
+                    location.reload(); // 刷新页面更新统计信息
+                } else {
+                    alert('操作失败: ' + (response.message || '未知错误'));
+                    $button.prop('disabled', false).html('<i class="fa fa-play"></i> 开始');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX错误:', {xhr, status, error});
+                let errorMessage = '网络错误，请重试';
+                
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                } else if (xhr.responseText) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorMessage = response.message || errorMessage;
+                    } catch (e) {
+                        errorMessage = xhr.responseText;
+                    }
+                }
+                
+                alert('操作失败: ' + errorMessage);
+                $button.prop('disabled', false).html('<i class="fa fa-play"></i> 开始');
+            }
+        });
+    }
+});
+</script>

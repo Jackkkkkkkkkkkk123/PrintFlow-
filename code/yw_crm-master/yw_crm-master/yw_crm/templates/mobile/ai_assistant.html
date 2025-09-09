@@ -1,0 +1,1361 @@
+{% extends 'mobile/base.html' %}
+{% load static %}
+
+{% block title %}AI助手 - 华龙印务管理系统{% endblock %}
+{% block header_title %}AI助手{% endblock %}
+
+{% block content %}
+<!-- AI助手介绍 -->
+<div class="card">
+    <div class="card-title">🤖 AI智能助手</div>
+    <div style="color: #666; margin-bottom: 15px;">
+        您的智能印刷管理助手，帮您分析订单数据，生成日报，发现异常情况。现在支持自然语言对话！
+    </div>
+    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; font-size: 12px; color: #666;">
+        <div style="margin-bottom: 8px;">💬 支持自然语言查询订单信息</div>
+        <div style="margin-bottom: 8px;">📊 自动分析订单数据</div>
+        <div style="margin-bottom: 8px;">📝 生成每日工作报告</div>
+        <div style="margin-bottom: 8px;">⚠️ 识别异常订单和延期风险</div>
+        <div>⏰ 每天下午5:30自动发送日报</div>
+    </div>
+</div>
+
+<!-- 智能对话区域 -->
+<div class="card">
+    <div class="card-title">💬 智能对话</div>
+    <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 12px; color: #666;">
+        <strong>💡 试试问我：</strong><br>
+        • "今天有多少个新订单？"<br>
+        • "查询订单号ABC123的详情"<br>
+        • "有哪些紧急交期的订单？"<br>
+        • "显示处理中的订单"
+    </div>
+    
+    <!-- 聊天消息区域 -->
+    <div id="chat-messages" style="background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; height: 300px; overflow-y: auto; padding: 15px; margin-bottom: 15px;">
+        <div class="ai-message">
+            <div style="display: flex; align-items: flex-start; margin-bottom: 15px;">
+                <div style="background: #667eea; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; margin-right: 10px; font-size: 14px;">🤖</div>
+                <div style="background: #f1f3f4; padding: 10px; border-radius: 10px; max-width: 80%; word-wrap: break-word;">
+                    您好！我是您的AI助手，可以帮您查询订单信息。请告诉我您想了解什么？
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 输入区域 -->
+    <div style="display: flex; gap: 10px;">
+        <input type="text" id="chat-input" placeholder="输入您的问题..." style="flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;" onkeypress="handleChatKeyPress(event)">
+        <button id="send-btn" onclick="sendChatMessage()" style="background: #667eea; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 14px; cursor: pointer;">发送</button>
+    </div>
+    
+    <!-- 快捷问题按钮 -->
+    <div style="margin-top: 15px;">
+        <div style="font-size: 12px; color: #666; margin-bottom: 8px;">🔥 快捷问题：</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <button class="quick-question-btn" onclick="askQuickQuestion('今天有多少个新订单？')">今日订单</button>
+            <button class="quick-question-btn" onclick="askQuickQuestion('显示所有处理中的订单')">处理中订单</button>
+            <button class="quick-question-btn" onclick="askQuickQuestion('有哪些紧急交期的订单？')">紧急订单</button>
+            <button class="quick-question-btn" onclick="askQuickQuestion('订单统计信息')">统计信息</button>
+        </div>
+        
+        <!-- 🚀 快速测试按钮（新增） -->
+        <div style="margin-top: 10px;">
+            <div style="font-size: 12px; color: #666; margin-bottom: 8px;">⚡ 超快查询（0.1秒响应）：</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                <button class="quick-test-btn" onclick="quickTest('stats')">📊 统计</button>
+                <button class="quick-test-btn" onclick="quickTest('today')">📅 今天</button>
+                <button class="quick-test-btn" onclick="quickTest('urgent')">🚨 紧急</button>
+                <button class="quick-test-btn" onclick="quickTest('processing')">⚡ 处理中</button>
+            </div>
+        </div>
+        
+        <!-- 流式响应演示 -->
+        <div style="margin-top: 10px;">
+            <div style="font-size: 12px; color: #666; margin-bottom: 8px;">🌊 流式响应演示：</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                <button class="stream-demo-btn" onclick="askQuickQuestion('详细分析今天的订单情况，包括状态分布和紧急程度')">详细分析</button>
+                <button class="stream-demo-btn" onclick="askQuickQuestion('帮我生成一份今日订单处理报告')">生成报告</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 快速操作 -->
+<div class="card">
+    <div class="card-title">⚡ 快速操作</div>
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+        <button class="btn btn-primary" onclick="generateDailyReport()">
+            📊<br>生成日报
+        </button>
+        <button class="btn btn-outline" onclick="analyzeAnomalies()">
+            🔍<br>异常分析
+        </button>
+        <button class="btn btn-outline" onclick="checkDeadlines()">
+            ⏰<br>交期检查
+        </button>
+        <button class="btn btn-outline" onclick="clearChatHistory()">
+            🧹<br>清除对话
+        </button>
+        <!-- <button class="btn btn-outline" onclick="clearAIMemory()">
+            🧹<br>清除AI记忆
+        </button> -->
+    </div>
+</div>
+
+<!-- 调试按钮 -->
+<div class="card" style="background: #f8f9fa; border: 1px dashed #ccc;">
+    <div class="card-title">🔧 调试信息</div>
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+        <button class="btn" style="background: #17a2b8; color: white;" onclick="testAIAPI()">
+            🧪 测试AI API
+        </button>
+        <button class="btn" style="background: #28a745; color: white;" onclick="testConversationAPI()">
+            🗣️ 测试对话API
+        </button>
+        <button class="btn" style="background: #ffc107; color: black;" onclick="testStreamingAPI()">
+            🌊 测试流式API
+        </button>
+        <button class="btn" style="background: #6f42c1; color: white;" onclick="clearDebugInfo()">
+            🧹 清除调试
+        </button>
+        <div id="debug-info" style="grid-column: 1 / -1; font-size: 11px; background: #fff; padding: 10px; border-radius: 5px; color: #666; max-height: 300px; overflow-y: auto; font-family: monospace;"></div>
+    </div>
+    
+    <!-- 实时连接状态 -->
+    <div style="margin-top: 15px; padding: 10px; background: #fff; border-radius: 5px; border: 1px solid #ddd;">
+        <div style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">🔗 连接状态</div>
+        <div id="connection-status" style="font-size: 11px; color: #666;">
+            <div>SSE连接: <span id="sse-status">未连接</span></div>
+            <div>最后事件: <span id="last-event">无</span></div>
+            <div>接收事件数: <span id="event-count">0</span></div>
+            <div>当前状态: <span id="current-status">空闲</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- 今日摘要 -->
+<div class="card">
+    <div class="card-title">📅 今日摘要</div>
+    <div id="today-summary" style="color: #666; text-align: center; padding: 20px;">
+        点击"生成日报"获取今日数据摘要...
+    </div>
+</div>
+
+<!-- 异常警告 -->
+<div class="card" id="alerts-card" style="display: none;">
+    <div class="card-title">🚨 异常警告</div>
+    <div id="alerts-content"></div>
+</div>
+
+<!-- 分析结果 -->
+<div class="card" id="analysis-card" style="display: none;">
+    <div class="card-title">📊 分析结果</div>
+    <div id="analysis-content"></div>
+</div>
+
+<!-- 历史报告 -->
+<div class="card" id="reports-card" style="display: none;">
+    <div class="card-title">📋 历史报告</div>
+    <div id="reports-content">
+        <div style="text-align: center; color: #666; padding: 20px;">
+            暂无历史报告数据
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* 快捷问题按钮样式 */
+.quick-question-btn {
+    background: #e3f2fd;
+    color: #1976d2;
+    border: 1px solid #bbdefb;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.quick-question-btn:hover {
+    background: #bbdefb;
+    transform: translateY(-1px);
+}
+
+/* 聊天消息样式 */
+.user-message {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    flex-direction: row-reverse;
+}
+
+.user-message .message-bubble {
+    background: #667eea;
+    color: white;
+    padding: 10px;
+    border-radius: 10px;
+    max-width: 80%;
+    word-wrap: break-word;
+    margin-left: 10px;
+}
+
+.ai-message {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.ai-message .message-bubble {
+    background: #f1f3f4;
+    color: #333;
+    padding: 10px;
+    border-radius: 10px;
+    max-width: 80%;
+    word-wrap: break-word;
+    margin-left: 10px;
+}
+
+.message-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.user-avatar {
+    background: #667eea;
+    color: white;
+}
+
+.ai-avatar {
+    background: #667eea;
+    color: white;
+}
+
+/* 加载动画 */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background: #f1f3f4;
+    border-radius: 10px;
+    margin-left: 40px;
+    max-width: 80px;
+}
+
+.typing-indicator span {
+    height: 6px;
+    width: 6px;
+    float: left;
+    margin: 0 1px;
+    background-color: #9E9EA1;
+    display: block;
+    border-radius: 50%;
+    opacity: 0.4;
+    animation: 1s blink infinite;
+}
+
+.typing-indicator span:nth-child(2) {
+    animation-delay: .2s;
+}
+
+.typing-indicator span:nth-child(3) {
+    animation-delay: .4s;
+}
+
+@keyframes blink {
+    50% {
+        opacity: 1;
+    }
+}
+
+/* 快速测试按钮样式 */
+.quick-test-btn {
+    background: #e8f5e8;
+    color: #2e7d32;
+    border: 1px solid #a5d6a7;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: bold;
+}
+
+.quick-test-btn:hover {
+    background: #c8e6c9;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(46, 125, 50, 0.2);
+}
+
+/* 流式演示按钮样式 */
+.stream-demo-btn {
+    background: #fff3e0;
+    color: #f57c00;
+    border: 1px solid #ffcc02;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.stream-demo-btn:hover {
+    background: #ffe0b2;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(245, 124, 0, 0.2);
+}
+
+/* 打字光标样式 */
+.typing-cursor {
+    color: #667eea;
+    font-weight: bold;
+    animation: blink-cursor 1s infinite;
+}
+
+@keyframes blink-cursor {
+    0%, 50% {
+        opacity: 1;
+    }
+    51%, 100% {
+        opacity: 0;
+    }
+}
+
+/* 流式内容容器优化 */
+#streaming-content {
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    line-height: 1.4;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 显示加载状态（已禁用）
+function showLoading() {
+    // document.getElementById('loading-overlay').style.display = 'flex';
+    console.log('开始处理请求...');
+}
+
+// 隐藏加载状态（已禁用）
+function hideLoading() {
+    // document.getElementById('loading-overlay').style.display = 'none';
+    console.log('请求处理完成');
+}
+
+// 强制关闭加载状态（已禁用）
+function forceHideLoading() {
+    // document.getElementById('loading-overlay').style.display = 'none';
+    console.log('强制关闭加载框');
+    showNotification('已取消操作', 'info');
+}
+
+
+
+async function clearAIMemory() {
+    if (!confirm('确定要清除AI助手的全部记忆吗？')) {
+        return;
+    }
+    try {
+        const response = await fetch('/mobile/ai-assistant/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ action: 'clear_memory' })
+        });
+        const data = await response.json();
+        if (data.status === 'success') {
+            showNotification('AI记忆已清空', 'success');
+        } else {
+            showNotification('清除失败：' + (data.message || data.error || '未知错误'), 'error');
+        }
+    } catch (error) {
+        showNotification('清除失败: ' + error.message, 'error');
+    }
+}
+
+
+
+
+
+
+// 生成日报
+async function generateDailyReport() {
+    showLoading();
+    
+    // 10秒超时机制
+    const timeoutId = setTimeout(() => {
+        // hideLoading(); // 已禁用加载框
+        showNotification('请求超时，请重试', 'error');
+        console.error('API请求超时');
+    }, 10000);
+    
+    try {
+        const csrfToken = getCsrfToken();
+        console.log('CSRF Token:', csrfToken);
+        console.log('发送AI日报请求...');
+        
+        const controller = new AbortController();
+        const timeoutSignal = setTimeout(() => controller.abort(), 8000);
+        
+        const response = await fetch('/api/ai/daily-report/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutSignal);
+        console.log('响应状态:', response.status);
+        console.log('响应OK:', response.ok);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('HTTP错误响应:', errorText);
+            showNotification(`HTTP错误 ${response.status}: ${errorText}`, 'error');
+            return;
+        }
+        
+        const data = await response.json();
+        console.log('响应数据:', data);
+        
+        if (data.status === 'success') {
+            document.getElementById('today-summary').innerHTML = data.report;
+            showNotification('日报生成成功', 'success');
+        } else {
+            console.error('业务错误:', data.message);
+            showNotification('日报生成失败：' + (data.message || data.error || '未知错误'), 'error');
+        }
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            console.error('请求被取消');
+            showNotification('请求被取消', 'info');
+        } else {
+            console.error('生成日报错误:', error);
+            showNotification('网络错误：' + error.message, 'error');
+        }
+    } finally {
+        clearTimeout(timeoutId);
+        hideLoading();
+    }
+}
+
+// 分析异常
+async function analyzeAnomalies() {
+    showLoading();
+    try {
+        const response = await fetch('/api/ai/analyze-anomalies/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            const alertsCard = document.getElementById('alerts-card');
+            const alertsContent = document.getElementById('alerts-content');
+            
+            alertsContent.innerHTML = data.anomalies;
+            alertsCard.style.display = 'block';
+            
+            showNotification('异常分析完成', 'success');
+        } else {
+            showNotification('异常分析失败：' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('异常分析错误:', error);
+        showNotification('网络错误，请稍后重试', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// 检查交期
+async function checkDeadlines() {
+    showLoading();
+    try {
+        const response = await fetch('/api/ai/check-deadlines/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            const analysisCard = document.getElementById('analysis-card');
+            const analysisContent = document.getElementById('analysis-content');
+            
+            analysisContent.innerHTML = data.deadline_analysis;
+            analysisCard.style.display = 'block';
+            
+            showNotification('交期检查完成', 'success');
+        } else {
+            showNotification('交期检查失败：' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('交期检查错误:', error);
+        showNotification('网络错误，请稍后重试', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// 查看历史报告
+function viewReports() {
+    const reportsCard = document.getElementById('reports-card');
+    const reportsContent = document.getElementById('reports-content');
+    
+    // 这里可以添加获取历史报告的API调用
+    reportsContent.innerHTML = `
+        <div style="color: #666; text-align: center; padding: 20px;">
+            历史报告功能开发中...<br>
+            将显示过去30天的AI生成报告
+        </div>
+    `;
+    
+    reportsCard.style.display = 'block';
+    showNotification('历史报告功能开发中', 'info');
+}
+
+// 获取CSRF Token
+function getCsrfToken() {
+    const name = 'csrftoken';
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// 检查自动报告
+function checkAutoReport() {
+    // 这里可以检查是否有自动生成的报告
+    const now = new Date();
+    const hour = now.getHours();
+    const minute = now.getMinutes();
+    
+    // 如果是下午5:30左右，提示用户查看自动报告
+    if (hour === 17 && minute >= 30 && minute <= 35) {
+        showNotification('📊 今日自动报告已生成，点击"生成日报"查看', 'info');
+    }
+}
+
+// 测试AI API功能
+async function testAIAPI() {
+    const debugInfo = document.getElementById('debug-info');
+    
+    function addDebugLog(message) {
+        const timestamp = new Date().toLocaleTimeString();
+        debugInfo.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+        debugInfo.scrollTop = debugInfo.scrollHeight;
+    }
+    
+    addDebugLog('🔄 开始测试AI API...');
+    
+    try {
+        // 1. 检查基本信息
+        addDebugLog(`📱 User Agent: ${navigator.userAgent.slice(0, 50)}...`);
+        addDebugLog(`🍪 Cookies: ${document.cookie ? '存在' : '无'}`);
+        
+        // 2. 检查CSRF Token
+        const csrfToken = getCsrfToken();
+        addDebugLog(`🔐 CSRF Token: ${csrfToken ? csrfToken.slice(0, 10) + '...' : '未找到'}`);
+        
+        // 3. 测试API连接
+        addDebugLog('📡 发送测试请求...');
+        
+        const response = await fetch('/api/ai/daily-report/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            }
+        });
+        
+        addDebugLog(`📊 响应状态: ${response.status} ${response.statusText}`);
+        addDebugLog(`✅ 响应OK: ${response.ok}`);
+        
+        // 4. 检查响应内容
+        const responseText = await response.text();
+        addDebugLog(`📝 响应长度: ${responseText.length} 字符`);
+        
+        try {
+            const data = JSON.parse(responseText);
+            addDebugLog(`🎯 JSON解析成功: ${JSON.stringify(data).slice(0, 100)}...`);
+            
+            if (data.status === 'success') {
+                addDebugLog('✅ API调用成功！');
+                showNotification('AI API测试成功', 'success');
+            } else {
+                addDebugLog(`❌ 业务错误: ${data.message || data.error}`);
+                showNotification(`API业务错误: ${data.message || data.error}`, 'error');
+            }
+        } catch (jsonError) {
+            addDebugLog(`❌ JSON解析失败: ${jsonError.message}`);
+            addDebugLog(`📄 原始响应: ${responseText.slice(0, 200)}...`);
+            showNotification('响应格式错误', 'error');
+        }
+        
+    } catch (error) {
+        addDebugLog(`💥 请求失败: ${error.message}`);
+        addDebugLog(`🔍 错误类型: ${error.name}`);
+        showNotification(`测试失败: ${error.message}`, 'error');
+    }
+    
+    addDebugLog('🏁 测试完成');
+}
+
+// ======================
+// 对话功能相关函数（优化版）
+// ======================
+
+// 全局变量
+let currentEventSource = null;  // 当前的SSE连接
+let isProcessing = false;       // 是否正在处理请求
+
+// 发送聊天消息（流式版本）
+async function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+    
+    if (!message) {
+        showNotification('请输入消息内容', 'error');
+        return;
+    }
+    
+    if (isProcessing) {
+        showNotification('正在处理中，请稍候...', 'info');
+        return;
+    }
+    
+    // 设置处理状态
+    isProcessing = true;
+    
+    // 禁用输入框和发送按钮
+    input.disabled = true;
+    const sendBtn = document.getElementById('send-btn');
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '取消';
+    sendBtn.onclick = cancelCurrentRequest;
+    
+    try {
+        // 显示用户消息
+        addChatMessage(message, 'user');
+        
+        // 清空输入框
+        input.value = '';
+        
+        // 显示AI正在输入的指示器
+        showTypingIndicator();
+        
+        // 🚀 使用流式API（Server-Sent Events）
+        await sendStreamingRequest(message);
+        
+    } catch (error) {
+        hideTypingIndicator();
+        console.error('发送消息错误:', error);
+        addChatMessage('抱歉，发送消息时出现了错误，请稍后重试。', 'ai');
+        showNotification('发送失败: ' + error.message, 'error');
+    } finally {
+        // 重新启用输入框和发送按钮
+        resetInputState();
+    }
+}
+
+// 流式请求处理
+async function sendStreamingRequest(message) {
+    return new Promise((resolve, reject) => {
+        try {
+            // 编码消息用于URL参数
+            const encodedMessage = encodeURIComponent(message);
+            const sseUrl = `/api/conversation/stream/?message=${encodedMessage}`;
+            
+            console.log('🔗 建立SSE连接:', sseUrl);
+            
+            // 创建Server-Sent Events连接
+            const eventSource = new EventSource(sseUrl);
+            currentEventSource = eventSource;
+            
+            let aiMessageElement = null;
+            let currentContent = '';
+            let hasReceivedContent = false;
+            let eventCounter = 0;
+            
+            // 连接建立成功
+            eventSource.onopen = function(event) {
+                console.log('✅ SSE连接已建立');
+                updateConnectionStatus('已连接', '连接成功', 0);
+            };
+            
+            // 监听消息事件
+            eventSource.onmessage = function(event) {
+                try {
+                    eventCounter++;
+                    console.log('📨 收到SSE数据:', event.data);
+                    updateConnectionStatus('已连接', event.data.substring(0, 50), eventCounter);
+                    
+                    const data = JSON.parse(event.data);
+                    
+                    switch (data.type) {
+                        case 'start':
+                            console.log('🚀 开始处理');
+                            updateTypingIndicator(data.message);
+                            break;
+                            
+                        case 'status':
+                            console.log('📊 状态更新:', data.message);
+                            updateTypingIndicator(data.message);
+                            break;
+                            
+                        case 'content':
+                            console.log('📝 内容数据:', data.content);
+                            hasReceivedContent = true;
+                            
+                            // 移除输入指示器（如果还在）
+                            hideTypingIndicator();
+                            
+                            // 创建或更新AI消息元素
+                            if (!aiMessageElement) {
+                                aiMessageElement = createAIMessageElement();
+                            }
+                            
+                            // 追加内容
+                            currentContent += data.content;
+                            updateAIMessageContent(aiMessageElement, currentContent);
+                            break;
+                            
+                        case 'complete':
+                            console.log('✅ 回复完成:', data.message);
+                            hideTypingIndicator();
+                            
+                            // 如果没有收到任何内容，显示完成消息
+                            if (!hasReceivedContent && !aiMessageElement) {
+                                addChatMessage('回复完成，但没有收到内容。', 'ai');
+                            } else if (aiMessageElement) {
+                                // 完成AI消息显示，移除打字光标
+                                finalizeAIMessage(aiMessageElement);
+                            }
+                            
+                            eventSource.close();
+                            currentEventSource = null;
+                            updateConnectionStatus('已关闭', '对话完成', eventCounter);
+                            resolve();
+                            break;
+                            
+                        case 'end':
+                            console.log('🏁 流式响应结束');
+                            
+                            if (aiMessageElement) {
+                                // 完成AI消息显示，移除打字光标
+                                finalizeAIMessage(aiMessageElement);
+                            }
+                            
+                            eventSource.close();
+                            currentEventSource = null;
+                            updateConnectionStatus('已关闭', '流式响应结束', eventCounter);
+                            resolve();
+                            break;
+                            
+                        case 'error':
+                            console.error('❌ AI错误:', data.message);
+                            hideTypingIndicator();
+                            
+                            if (!aiMessageElement) {
+                                addChatMessage(data.message, 'ai');
+                            } else {
+                                updateAIMessageContent(aiMessageElement, currentContent + '\n\n❌ ' + data.message);
+                            }
+                            
+                            eventSource.close();
+                            currentEventSource = null;
+                            updateConnectionStatus('错误', data.message, eventCounter);
+                            reject(new Error(data.message));
+                            break;
+                            
+                        default:
+                            console.log('🔄 其他事件类型:', data.type);
+                            break;
+                    }
+                } catch (parseError) {
+                    console.error('❌ 解析SSE数据失败:', parseError, 'Raw data:', event.data);
+                    updateConnectionStatus('解析错误', parseError.message, eventCounter);
+                }
+            };
+            
+            // 监听连接关闭事件
+            eventSource.addEventListener('close', function(event) {
+                console.log('🔒 SSE连接关闭');
+                eventSource.close();
+                currentEventSource = null;
+                updateConnectionStatus('已关闭', '连接已关闭', 0);
+                resolve();
+            });
+            
+            // 监听错误事件
+            eventSource.onerror = function(event) {
+                console.error('❌ SSE连接错误:', event);
+                
+                // 检查连接状态
+                if (eventSource.readyState === EventSource.CLOSED) {
+                    console.log('连接已关闭');
+                } else if (eventSource.readyState === EventSource.CONNECTING) {
+                    console.log('正在重连...');
+                    return; // 让浏览器自动重连
+                }
+                
+                eventSource.close();
+                currentEventSource = null;
+                
+                if (!hasReceivedContent && !aiMessageElement) {
+                    addChatMessage('连接中断，请稍后重试。', 'ai');
+                }
+                
+                updateConnectionStatus('错误', '连接错误', 0);
+                reject(new Error('连接中断'));
+            };
+            
+            // 设置超时 - 增加到60秒，给AI更多时间
+            const timeoutId = setTimeout(() => {
+                if (currentEventSource) {
+                    console.log('⏰ 请求超时，自动取消');
+                    cancelCurrentRequest();
+                    reject(new Error('请求超时（60秒）'));
+                }
+            }, 60000);  // 60秒超时
+            
+            // 清理超时定时器
+            const originalResolve = resolve;
+            const originalReject = reject;
+            
+            resolve = function(...args) {
+                clearTimeout(timeoutId);
+                originalResolve(...args);
+            };
+            
+            reject = function(...args) {
+                clearTimeout(timeoutId);
+                originalReject(...args);
+            };
+            
+        } catch (error) {
+            console.error('❌ 创建流式连接失败:', error);
+            reject(error);
+        }
+    });
+}
+
+// 取消当前请求
+function cancelCurrentRequest() {
+    if (currentEventSource) {
+        console.log('取消当前请求...');
+        currentEventSource.close();
+        currentEventSource = null;
+        
+        hideTypingIndicator();
+        addChatMessage('请求已取消。', 'ai');
+        showNotification('已取消当前请求', 'info');
+    }
+    
+    resetInputState();
+}
+
+// 重置输入状态
+function resetInputState() {
+    isProcessing = false;
+    
+    const input = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    
+    input.disabled = false;
+    sendBtn.disabled = false;
+    sendBtn.innerHTML = '发送';
+    sendBtn.onclick = sendChatMessage;
+    
+    input.focus();
+}
+
+// 创建AI消息元素
+function createAIMessageElement() {
+    const chatMessages = document.getElementById('chat-messages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'ai-message';
+    messageDiv.innerHTML = `
+        <div class="message-avatar ai-avatar">🤖</div>
+        <div class="message-bubble" id="streaming-content"></div>
+    `;
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    return messageDiv;
+}
+
+// 更新AI消息内容（优化流式显示）
+function updateAIMessageContent(messageElement, content) {
+    const contentDiv = messageElement.querySelector('#streaming-content');
+    if (contentDiv) {
+        // 使用innerHTML来支持换行和格式，同时添加打字光标效果
+        contentDiv.innerHTML = content.replace(/\n/g, '<br>') + '<span class="typing-cursor">|</span>';
+        
+        // 滚动到最新内容
+        const chatMessages = document.getElementById('chat-messages');
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+}
+
+// 完成AI消息显示（移除打字光标）
+function finalizeAIMessage(messageElement) {
+    const contentDiv = messageElement.querySelector('#streaming-content');
+    if (contentDiv) {
+        // 移除打字光标
+        const content = contentDiv.innerHTML.replace(/<span class="typing-cursor">.*?<\/span>/g, '');
+        contentDiv.innerHTML = content;
+    }
+}
+
+// 更新输入指示器状态
+function updateTypingIndicator(statusMessage) {
+    const typingIndicator = document.getElementById('typing-indicator');
+    if (typingIndicator) {
+        const existingStatus = typingIndicator.querySelector('.status-text');
+        if (existingStatus) {
+            existingStatus.textContent = statusMessage;
+        } else {
+            const statusDiv = document.createElement('div');
+            statusDiv.className = 'status-text';
+            statusDiv.style.fontSize = '11px';
+            statusDiv.style.color = '#666';
+            statusDiv.style.marginTop = '5px';
+            statusDiv.textContent = statusMessage;
+            typingIndicator.appendChild(statusDiv);
+        }
+    }
+}
+
+// 显示AI正在输入的指示器（增强版）
+function showTypingIndicator() {
+    hideTypingIndicator(); // 先清除可能存在的指示器
+    
+    const chatMessages = document.getElementById('chat-messages');
+    const typingDiv = document.createElement('div');
+    typingDiv.id = 'typing-indicator';
+    typingDiv.className = 'ai-message';
+    typingDiv.innerHTML = `
+        <div class="message-avatar ai-avatar">🤖</div>
+        <div class="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+            <div class="status-text" style="font-size: 11px; color: #666; margin-top: 5px;">正在处理您的问题...</div>
+        </div>
+    `;
+    
+    chatMessages.appendChild(typingDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// 降级到传统API的方法（备用）
+async function sendTraditionalRequest(message) {
+        const response = await fetch('/api/conversation/chat/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                message: message
+            })
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('HTTP错误:', errorText);
+        throw new Error(`网络错误: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            addChatMessage(data.response, 'ai');
+        } else {
+            addChatMessage(data.response || '抱歉，我无法处理这个请求。', 'ai');
+            if (data.error) {
+                console.error('AI错误:', data.error);
+        }
+    }
+}
+
+// 快捷问题（增强版）
+function askQuickQuestion(question) {
+    document.getElementById('chat-input').value = question;
+    sendChatMessage();
+}
+
+// 快速测试按钮
+function quickTest(type) {
+    const testQueries = {
+        'stats': '统计',
+        'today': '今天',
+        'urgent': '紧急',
+        'processing': '处理中'
+    };
+    
+    const query = testQueries[type] || '统计';
+    askQuickQuestion(query);
+}
+
+// 添加聊天消息到界面（保持兼容）
+function addChatMessage(message, sender) {
+    const chatMessages = document.getElementById('chat-messages');
+    const messageDiv = document.createElement('div');
+    
+    if (sender === 'user') {
+        messageDiv.className = 'user-message';
+        messageDiv.innerHTML = `
+            <div class="message-avatar user-avatar">👤</div>
+            <div class="message-bubble">${escapeHtml(message)}</div>
+        `;
+    } else {
+        messageDiv.className = 'ai-message';
+        messageDiv.innerHTML = `
+            <div class="message-avatar ai-avatar">🤖</div>
+            <div class="message-bubble">${message}</div>
+        `;
+    }
+    
+    chatMessages.appendChild(messageDiv);
+    
+    // 滚动到最新消息
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// 隐藏AI正在输入的指示器
+function hideTypingIndicator() {
+    const typingIndicator = document.getElementById('typing-indicator');
+    if (typingIndicator) {
+        typingIndicator.remove();
+    }
+}
+
+// 处理键盘事件
+function handleChatKeyPress(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        if (!isProcessing) {
+        sendChatMessage();
+    }
+}
+
+    // ESC键取消请求
+    if (event.key === 'Escape' && isProcessing) {
+        cancelCurrentRequest();
+    }
+}
+
+// 清除对话历史
+async function clearChatHistory() {
+    if (!confirm('确定要清除所有对话记录吗？')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/conversation/history/', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            // 清除界面中的对话记录
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = `
+                <div class="ai-message">
+                    <div style="display: flex; align-items: flex-start; margin-bottom: 15px;">
+                        <div style="background: #667eea; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; margin-right: 10px; font-size: 14px;">🤖</div>
+                        <div style="background: #f1f3f4; padding: 10px; border-radius: 10px; max-width: 80%; word-wrap: break-word;">
+                            对话记录已清除！您好！我是您的AI助手，可以帮您查询订单信息。试试说「统计」或「今天」！
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            showNotification('对话记录已清除', 'success');
+        } else {
+            showNotification('清除失败：' + data.message, 'error');
+        }
+        
+    } catch (error) {
+        console.error('清除对话记录错误:', error);
+        showNotification('清除失败: ' + error.message, 'error');
+    }
+}
+
+// 测试对话API
+async function testConversationAPI() {
+    const debugInfo = document.getElementById('debug-info');
+    
+    function addDebugLog(message) {
+        const timestamp = new Date().toLocaleTimeString();
+        debugInfo.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+        debugInfo.scrollTop = debugInfo.scrollHeight;
+    }
+    
+    addDebugLog('🔄 开始测试对话API...');
+    
+    try {
+        const response = await fetch('/api/conversation/test/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        
+        addDebugLog(`📊 响应状态: ${response.status}`);
+        
+        const data = await response.json();
+        addDebugLog(`📝 测试结果: ${data.test_successful ? '成功' : '失败'}`);
+        addDebugLog(`💬 测试消息: ${data.test_message}`);
+        addDebugLog(`🤖 AI回复: ${data.ai_response ? data.ai_response.slice(0, 50) + '...' : '无'}`);
+        
+        if (data.test_successful) {
+            addDebugLog('✅ 对话API测试成功！');
+            showNotification('对话API测试成功', 'success');
+        } else {
+            addDebugLog(`❌ 测试失败: ${data.message}`);
+            showNotification('对话API测试失败', 'error');
+        }
+        
+    } catch (error) {
+        addDebugLog(`💥 测试失败: ${error.message}`);
+        showNotification('测试失败: ' + error.message, 'error');
+    }
+    
+    addDebugLog('🏁 测试完成');
+}
+
+// 测试流式API
+async function testStreamingAPI() {
+    const debugInfo = document.getElementById('debug-info');
+    const sseStatus = document.getElementById('sse-status');
+    const lastEvent = document.getElementById('last-event');
+    const eventCount = document.getElementById('event-count');
+    const currentStatus = document.getElementById('current-status');
+
+    function addDebugLog(message) {
+        const timestamp = new Date().toLocaleTimeString();
+        debugInfo.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+        debugInfo.scrollTop = debugInfo.scrollHeight;
+    }
+
+    addDebugLog('🔄 开始测试流式API...');
+    sseStatus.textContent = '尝试连接...';
+    lastEvent.textContent = '无';
+    eventCount.textContent = '0';
+    currentStatus.textContent = '空闲';
+
+    try {
+        const encodedMessage = encodeURIComponent('测试流式API');
+        const sseUrl = `/api/conversation/stream/?message=${encodedMessage}`;
+        const eventSource = new EventSource(sseUrl);
+        currentEventSource = eventSource; // 更新全局变量
+
+        eventSource.onopen = function(event) {
+            addDebugLog('✅ SSE连接已建立');
+            sseStatus.textContent = '已连接';
+            currentStatus.textContent = '已连接';
+        };
+
+        eventSource.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+                addDebugLog(`📨 收到SSE数据: ${event.data}`);
+                lastEvent.textContent = event.data;
+                eventCount.textContent = parseInt(eventCount.textContent) + 1;
+
+                if (data.type === 'start') {
+                    addDebugLog('🚀 开始处理');
+                } else if (data.type === 'status') {
+                    addDebugLog(`📊 状态更新: ${data.message}`);
+                } else if (data.type === 'content') {
+                    addDebugLog(`📝 内容数据: ${data.content}`);
+                } else if (data.type === 'complete') {
+                    addDebugLog('✅ 回复完成');
+                } else if (data.type === 'end') {
+                    addDebugLog('🏁 流式响应结束');
+                } else if (data.type === 'error') {
+                    addDebugLog(`❌ AI错误: ${data.message}`);
+                }
+            } catch (parseError) {
+                addDebugLog(`❌ 解析SSE数据失败: ${parseError.message}, Raw data: ${event.data}`);
+            }
+        };
+
+        eventSource.addEventListener('close', function(event) {
+            addDebugLog('🔒 SSE连接关闭');
+            eventSource.close();
+            currentEventSource = null;
+            sseStatus.textContent = '已关闭';
+            currentStatus.textContent = '已关闭';
+            eventCount.textContent = '0';
+            lastEvent.textContent = '无';
+        });
+
+        eventSource.onerror = function(event) {
+            addDebugLog(`❌ SSE连接错误: ${event}`);
+            eventSource.close();
+            currentEventSource = null;
+            sseStatus.textContent = '错误';
+            currentStatus.textContent = '错误';
+            lastEvent.textContent = '无';
+            eventCount.textContent = '0';
+        };
+
+        // 模拟一个流式响应
+        setTimeout(() => {
+            const message = '这是一条流式响应消息。';
+            const encodedMessage = encodeURIComponent(message);
+            const sseUrl = `/api/conversation/stream/?message=${encodedMessage}`;
+            const eventSource = new EventSource(sseUrl);
+            currentEventSource = eventSource; // 更新全局变量
+
+            eventSource.onopen = function(event) {
+                addDebugLog('✅ SSE连接已建立 (模拟)');
+                sseStatus.textContent = '已连接 (模拟)';
+                currentStatus.textContent = '已连接 (模拟)';
+            };
+
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    addDebugLog(`📨 收到SSE数据 (模拟): ${event.data}`);
+                    lastEvent.textContent = event.data;
+                    eventCount.textContent = parseInt(eventCount.textContent) + 1;
+
+                    if (data.type === 'start') {
+                        addDebugLog('🚀 开始处理 (模拟)');
+                    } else if (data.type === 'status') {
+                        addDebugLog(`📊 状态更新 (模拟): ${data.message}`);
+                    } else if (data.type === 'content') {
+                        addDebugLog(`📝 内容数据 (模拟): ${data.content}`);
+                    } else if (data.type === 'complete') {
+                        addDebugLog('✅ 回复完成 (模拟)');
+                    } else if (data.type === 'end') {
+                        addDebugLog('🏁 流式响应结束 (模拟)');
+                    } else if (data.type === 'error') {
+                        addDebugLog(`❌ AI错误 (模拟): ${data.message}`);
+                    }
+                } catch (parseError) {
+                    addDebugLog(`❌ 解析SSE数据失败 (模拟): ${parseError.message}, Raw data: ${event.data}`);
+                }
+            };
+
+            eventSource.addEventListener('close', function(event) {
+                addDebugLog('🔒 SSE连接关闭 (模拟)');
+                eventSource.close();
+                currentEventSource = null;
+                sseStatus.textContent = '已关闭 (模拟)';
+                currentStatus.textContent = '已关闭 (模拟)';
+                eventCount.textContent = '0';
+                lastEvent.textContent = '无';
+            });
+
+            eventSource.onerror = function(event) {
+                addDebugLog(`❌ SSE连接错误 (模拟): ${event}`);
+                eventSource.close();
+                currentEventSource = null;
+                sseStatus.textContent = '错误 (模拟)';
+                currentStatus.textContent = '错误 (模拟)';
+                lastEvent.textContent = '无';
+                eventCount.textContent = '0';
+            };
+
+        }, 5000); // 5秒后模拟流式响应
+
+    } catch (error) {
+        addDebugLog(`💥 请求失败: ${error.message}`);
+        showNotification('测试失败: ' + error.message, 'error');
+    }
+    addDebugLog('🏁 测试完成');
+}
+
+// 更新连接状态
+function updateConnectionStatus(status, message, eventCount) {
+    const sseStatus = document.getElementById('sse-status');
+    const lastEvent = document.getElementById('last-event');
+    const eventCountSpan = document.getElementById('event-count');
+    const currentStatus = document.getElementById('current-status');
+
+    sseStatus.textContent = status;
+    lastEvent.textContent = message;
+    eventCountSpan.textContent = eventCount;
+    currentStatus.textContent = status;
+}
+
+// 清除调试信息
+function clearDebugInfo() {
+    const debugInfo = document.getElementById('debug-info');
+    debugInfo.innerHTML = '';
+    updateConnectionStatus('未连接', '无', 0);
+    showNotification('调试信息已清除', 'info');
+}
+
+// HTML转义函数
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+// 更新页面初始化函数
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('AI助手页面加载完成');
+    
+    // 检查是否有自动生成的报告
+    checkAutoReport();
+    
+    // 聚焦到输入框
+    document.getElementById('chat-input').focus();
+    
+    // 添加欢迎提示
+    setTimeout(() => {
+        showNotification('💬 现在支持自然语言查询订单信息！试试问我："今天有多少个新订单？"', 'info');
+    }, 2000);
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,1171 @@
+{% extends 'mobile/base.html' %}
+{% load static %}
+
+{% block title %}{{ order.product_name|default:"产品" }} - {{ order.order_no }}{% endblock %}
+{% block header_title %}{{ order.product_name|default:"产品详情" }}{% endblock %}
+
+{% block content %}
+<!-- 订单基本信息 -->
+<div class="card">
+    <div class="card-title">📋 基本信息</div>
+    
+    <div class="info-group">
+        <div class="info-row">
+            <div class="info-label">产品名称：</div>
+            <div class="info-value" style="font-weight: bold; color: #007bff;">{{ order.product_name|default:"未命名产品" }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">订单号：</div>
+            <div class="info-value">{{ order.order_no }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">客户姓名：</div>
+            <div class="info-value">{{ order.customer_name|default:"未设置" }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">工作令号：</div>
+            <div class="info-value">{{ order.work_order_no|default:"未设置" }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">联系电话：</div>
+            <div class="info-value">{{ order.contact_phone|default:"未设置" }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">数量：</div>
+            <div class="info-value">{{ order.quantity|default:"未设置" }} {{ order.unit|default:"" }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">交期：</div>
+            <div class="info-value">
+                {% if order.delivery_date %}
+                    {{ order.delivery_date|date:"Y年m月d日" }}
+                {% else %}
+                    未设置
+                {% endif %}
+            </div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">订单状态：</div>
+            <div class="info-value">
+                <span class="status-badge status-{% if order.status == 1 %}pending{% elif order.status == 2 %}processing{% elif order.status == 3 %}completed{% endif %}">
+                    {% if order.status == 1 %}待处理
+                    {% elif order.status == 2 %}处理中
+                    {% elif order.status == 3 %}已完成
+                    {% else %}未知{% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 产品规格信息 -->
+<div class="card">
+    <div class="card-title">📐 产品规格</div>
+    
+    <div class="info-group">
+        <div class="info-row">
+            <div class="info-label">产品描述：</div>
+            <div class="info-value">{{ order.product_description|default:"未设置" }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">产品尺寸：</div>
+            <div class="info-value">{{ order.product_size|default:"未设置" }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">印刷类型：</div>
+            <div class="info-value">{{ order.print_type|default:"未设置" }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- 详细要求信息 -->
+<div class="card">
+    <div class="card-title">📋 详细要求</div>
+    
+    <div class="info-group">
+        {% if order.design_requirement %}
+        <div class="info-row">
+            <div class="info-label">设计制作要求：</div>
+            <div class="info-value">{{ order.design_requirement }}</div>
+        </div>
+        {% endif %}
+        {% if order.imposition_requirement %}
+        <div class="info-row">
+            <div class="info-label">拼晒要求：</div>
+            <div class="info-value">{{ order.imposition_requirement }}</div>
+        </div>
+        {% endif %}
+        {% if order.customer_supply %}
+        <div class="info-row">
+            <div class="info-label">客户提供：</div>
+            <div class="info-value">{{ order.customer_supply }}</div>
+        </div>
+        {% endif %}
+        {% if order.consumption_requirement %}
+        <div class="info-row">
+            <div class="info-label">消耗要求：</div>
+            <div class="info-value">{{ order.consumption_requirement }}</div>
+        </div>
+        {% endif %}
+        {% if order.print_tech_requirement %}
+        <div class="info-row">
+            <div class="info-label">印刷工艺要求：</div>
+            <div class="info-value">{{ order.print_tech_requirement }}</div>
+        </div>
+        {% endif %}
+        {% if order.quality_requirement %}
+        <div class="info-row">
+            <div class="info-label">质量要求：</div>
+            <div class="info-value">{{ order.quality_requirement }}</div>
+        </div>
+        {% endif %}
+        {% if order.delivery_pack_requirement %}
+        <div class="info-row">
+            <div class="info-label">送货和包装要求：</div>
+            <div class="info-value">{{ order.delivery_pack_requirement }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 用料明细 -->
+{% if details %}
+    {% for detail in details %}
+        {% if detail.detail_type == '用料' and forloop.first %}
+<div class="card">
+    <div class="card-title">📦 用料明细</div>
+        {% endif %}
+        {% if detail.detail_type == '用料' %}
+        <div class="detail-item">
+            <div class="detail-header">
+                <span class="detail-serial">{{ detail.serial_no }}</span>
+                <span class="detail-title">{{ detail.item }}</span>
+            </div>
+            <div class="detail-content">
+                {% if detail.material_name %}<div class="detail-field">材料：{{ detail.material_name }}</div>{% endif %}
+                {% if detail.spec %}<div class="detail-field">规格：{{ detail.spec }}</div>{% endif %}
+                {% if detail.page_number %}<div class="detail-field">页数：{{ detail.page_number }}</div>{% endif %}
+                {% if detail.open_number %}<div class="detail-field">开数：{{ detail.open_number }}</div>{% endif %}
+                {% if detail.fangshu %}<div class="detail-field">放数：{{ detail.fangshu }}</div>{% endif %}
+                {% if detail.total %}<div class="detail-field">总数：{{ detail.total }}</div>{% endif %}
+                {% if detail.unit_price %}<div class="detail-field">单价：{{ detail.unit_price }}</div>{% endif %}
+                {% if detail.amount %}<div class="detail-field">金额：{{ detail.amount }}</div>{% endif %}
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+    {% for detail in details %}
+        {% if detail.detail_type == '用料' and forloop.last %}
+</div>
+        {% endif %}
+    {% endfor %}
+
+    <!-- 印前明细 -->
+    {% for detail in details %}
+        {% if detail.detail_type == '印前' and forloop.first %}
+<div class="card">
+    <div class="card-title">🖨️ 印前明细</div>
+        {% endif %}
+        {% if detail.detail_type == '印前' %}
+        <div class="detail-item">
+            <div class="detail-header">
+                <span class="detail-serial">{{ detail.serial_no }}</span>
+                <span class="detail-title">{{ detail.item }}</span>
+            </div>
+            <div class="detail-content">
+                {% if detail.content %}<div class="detail-field">内容：{{ detail.content }}</div>{% endif %}
+                {% if detail.spec %}<div class="detail-field">规格：{{ detail.spec }}</div>{% endif %}
+                {% if detail.plate_name %}<div class="detail-field">制版名称：{{ detail.plate_name }}</div>{% endif %}
+                {% if detail.quantity %}<div class="detail-field">数量：{{ detail.quantity }}</div>{% endif %}
+                {% if detail.unit %}<div class="detail-field">单位：{{ detail.unit }}</div>{% endif %}
+                {% if detail.unit_price %}<div class="detail-field">单价：{{ detail.unit_price }}</div>{% endif %}
+                {% if detail.amount %}<div class="detail-field">金额：{{ detail.amount }}</div>{% endif %}
+                {% if detail.note_detail %}<div class="detail-field">备注：{{ detail.note_detail }}</div>{% endif %}
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+    {% for detail in details %}
+        {% if detail.detail_type == '印前' and forloop.last %}
+</div>
+        {% endif %}
+    {% endfor %}
+
+    <!-- 印刷明细 -->
+    {% for detail in details %}
+        {% if detail.detail_type == '印刷' and forloop.first %}
+<div class="card">
+    <div class="card-title">🎨 印刷明细</div>
+        {% endif %}
+        {% if detail.detail_type == '印刷' %}
+        <div class="detail-item">
+            <div class="detail-header">
+                <span class="detail-serial">{{ detail.serial_no }}</span>
+                <span class="detail-title">{{ detail.item }}</span>
+            </div>
+            <div class="detail-content">
+                {% if detail.print_color %}<div class="detail-field">印色：{{ detail.print_color }}</div>{% endif %}
+                {% if detail.print_size %}<div class="detail-field">印刷尺寸：{{ detail.print_size }}</div>{% endif %}
+                {% if detail.print_method %}<div class="detail-field">印刷方式：{{ detail.print_method }}</div>{% endif %}
+                {% if detail.machine %}<div class="detail-field">机台：{{ detail.machine }}</div>{% endif %}
+                {% if detail.quantity %}<div class="detail-field">数量：{{ detail.quantity }}</div>{% endif %}
+                {% if detail.unit %}<div class="detail-field">单位：{{ detail.unit }}</div>{% endif %}
+                {% if detail.unit_price %}<div class="detail-field">单价：{{ detail.unit_price }}</div>{% endif %}
+                {% if detail.amount %}<div class="detail-field">金额：{{ detail.amount }}</div>{% endif %}
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+    {% for detail in details %}
+        {% if detail.detail_type == '印刷' and forloop.last %}
+</div>
+        {% endif %}
+    {% endfor %}
+
+    <!-- 印后明细 -->
+    {% for detail in details %}
+        {% if detail.detail_type == '印后' and forloop.first %}
+<div class="card">
+    <div class="card-title">✂️ 印后明细</div>
+        {% endif %}
+        {% if detail.detail_type == '印后' %}
+        <div class="detail-item">
+            <div class="detail-header">
+                <span class="detail-serial">{{ detail.serial_no }}</span>
+                <span class="detail-title">{{ detail.item }}</span>
+            </div>
+            <div class="detail-content">
+                {% if detail.process_content %}<div class="detail-field">加工内容：{{ detail.process_content }}</div>{% endif %}
+                {% if detail.process %}<div class="detail-field">工序：{{ detail.process }}</div>{% endif %}
+                {% if detail.spec %}<div class="detail-field">规格：{{ detail.spec }}</div>{% endif %}
+                {% if detail.machine %}<div class="detail-field">机台：{{ detail.machine }}</div>{% endif %}
+                {% if detail.quantity %}<div class="detail-field">数量：{{ detail.quantity }}</div>{% endif %}
+                {% if detail.unit_price %}<div class="detail-field">单价：{{ detail.unit_price }}</div>{% endif %}
+                {% if detail.amount %}<div class="detail-field">金额：{{ detail.amount }}</div>{% endif %}
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+    {% for detail in details %}
+        {% if detail.detail_type == '印后' and forloop.last %}
+</div>
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+<!-- 进度概览 -->
+{% if progress_steps %}
+<div class="card">
+    <div class="card-title">📊 进度概览</div>
+    
+    <div class="progress-overview">
+        <div class="progress-bar-container">
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ progress_percentage|default:0 }}%"></div>
+            </div>
+            <div class="progress-text">{{ progress_percentage|default:0 }}% ({{ completed_steps|default:0 }}/{{ total_steps|default:0 }})</div>
+        </div>
+        
+        <div class="stats-grid" style="margin-top: 15px;">
+            <div class="stat-item">
+                <div class="stat-number">{{ pending_steps|default:0 }}</div>
+                <div class="stat-label">待开始</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ in_progress_steps|default:0 }}</div>
+                <div class="stat-label">进行中</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ completed_steps|default:0 }}</div>
+                <div class="stat-label">已完成</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ total_steps|default:0 }}</div>
+                <div class="stat-label">总步骤</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 生产进度（分板块显示） -->
+<div class="card">
+    <div class="card-title">🔄 生产步骤</div>
+    
+    {# 封面流程 #}
+    {% if cover_steps and cover_steps|length > 0 %}
+    <div style="margin-bottom: 20px;">
+        <div style="font-weight: bold; color: #007bff; margin-bottom: 8px;">封面流程</div>
+    <div class="progress-container">
+        {% for step_info in step_list %}
+                {% if step_info.step.step_category == 'cover' %}
+                <div class="progress-step {% if step_info.step.status == 3 %}completed{% elif step_info.step.status == 2 %}active{% else %}pending{% endif %}">
+            <div class="step-indicator">
+                        {% if step_info.step.status == 3 %}
+                    <span class="step-icon">✓</span>
+                        {% elif step_info.step.status == 2 %}
+                    <span class="step-icon">⏳</span>
+                {% else %}
+                    <span class="step-icon">○</span>
+                {% endif %}
+            </div>
+            <div class="step-content">
+                        <div class="step-title">{{ step_info.step.step_name }}</div>
+                <div class="step-status">
+                            {% if step_info.step.status == 1 %}待开始
+                            {% elif step_info.step.status == 2 %}进行中
+                            {% elif step_info.step.status == 3 %}已完成
+                            {% elif step_info.step.status == 4 %}已跳过
+                    {% else %}未知{% endif %}
+                </div>
+                        {% if step_info.step.operator %}
+                        <div class="step-operator">操作员：{{ step_info.step.operator.username }}</div>
+                {% endif %}
+                        {% if step_info.step.start_time %}
+                        <div class="step-time">开始：{{ step_info.step.start_time|date:"m-d H:i" }}</div>
+                {% endif %}
+                        {% if step_info.step.end_time %}
+                        <div class="step-time">完成：{{ step_info.step.end_time|date:"m-d H:i" }}</div>
+                {% endif %}
+                        {% if step_info.step.confirm_user %}
+                        <div class="step-operator">确认人：{{ step_info.step.confirm_user.name }}</div>
+                {% endif %}
+                        {% if step_info.step.note %}
+                        <div class="step-note">备注：{{ step_info.step.note }}</div>
+                 {% endif %}
+                 <!-- 步骤操作按钮 - 包含权限检查 -->
+                        {% if step_info.step.status == 1 %}
+                     {% if step_info.can_start and step_info.can_start_permission %}
+                     <div class="step-actions" style="margin-top: 10px;">
+                                <button class="btn btn-primary" style="font-size: 12px; padding: 6px 12px;" onclick="startStep('{{ step_info.step.id }}')">
+                             开始此步骤
+                         </button>
+                     </div>
+                     {% elif not step_info.can_start_permission %}
+                     <div class="step-actions" style="margin-top: 10px;">
+                         <button class="btn btn-secondary" disabled style="font-size: 12px; padding: 6px 12px; background: #ffc107; color: #fff;">
+                             🔒 无权限操作
+                         </button>
+                     </div>
+                     {% else %}
+                     <div class="step-actions" style="margin-top: 10px;">
+                         <button class="btn btn-secondary" disabled style="font-size: 12px; padding: 6px 12px; background: #e0e0e0; color: #999;">
+                             🔒 等待前置步骤
+                         </button>
+                     </div>
+                     {% endif %}
+                        {% elif step_info.step.status == 2 %}
+                 <div class="step-actions" style="margin-top: 10px;">
+                     {% if step_info.can_complete_permission %}
+                            <button class="btn btn-primary" style="font-size: 12px; padding: 6px 12px; margin-right: 5px;" onclick="completeStep('{{ step_info.step.id }}')">
+                         ✅ 完成
+                     </button>
+                     {% else %}
+                     <button class="btn btn-secondary" disabled style="font-size: 12px; padding: 6px 12px; margin-right: 5px; background: #ffc107; color: #fff;">
+                         🔒 无完成权限
+                     </button>
+                     {% endif %}
+                     {% if step_info.can_skip_permission %}
+                            <button class="btn btn-outline" style="font-size: 12px; padding: 6px 12px;" onclick="skipStep('{{ step_info.step.id }}')">
+                         ⏭️ 跳过
+                     </button>
+                     {% else %}
+                     <button class="btn btn-secondary" disabled style="font-size: 12px; padding: 6px 12px; background: #ffc107; color: #fff;">
+                         🔒 无跳过权限
+                     </button>
+                     {% endif %}
+                 </div>
+                        {% elif step_info.step.status == 4 %}
+                 <div class="step-actions" style="margin-top: 10px;">
+                     <span style="color: #ffc107; font-size: 12px;">⚠️ 已跳过</span>
+                 </div>
+                 {% endif %}
+             </div>
+         </div>
+         {% if not forloop.last %}
+                <div class="step-connector {% if step_info.step.status == 3 %}completed{% endif %}"></div>
+         {% endif %}
+                {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+    {# 内文流程 #}
+    {% if content_steps and content_steps|length > 0 %}
+    <div style="margin-bottom: 20px;">
+        <div style="font-weight: bold; color: #20c997; margin-bottom: 8px;">内文流程</div>
+        <div class="progress-container">
+            {% for step_info in step_list %}
+                {% if step_info.step.step_category == 'content' %}
+                <div class="progress-step {% if step_info.step.status == 3 %}completed{% elif step_info.step.status == 2 %}active{% else %}pending{% endif %}">
+                    <div class="step-indicator">
+                        {% if step_info.step.status == 3 %}
+                            <span class="step-icon">✓</span>
+                        {% elif step_info.step.status == 2 %}
+                            <span class="step-icon">⏳</span>
+                        {% else %}
+                            <span class="step-icon">○</span>
+                        {% endif %}
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">{{ step_info.step.step_name }}</div>
+                        <div class="step-status">
+                            {% if step_info.step.status == 1 %}待开始
+                            {% elif step_info.step.status == 2 %}进行中
+                            {% elif step_info.step.status == 3 %}已完成
+                            {% elif step_info.step.status == 4 %}已跳过
+                            {% else %}未知{% endif %}
+                        </div>
+                        {% if step_info.step.operator %}
+                        <div class="step-operator">操作员：{{ step_info.step.operator.username }}</div>
+                        {% endif %}
+                        {% if step_info.step.start_time %}
+                        <div class="step-time">开始：{{ step_info.step.start_time|date:"m-d H:i" }}</div>
+                        {% endif %}
+                        {% if step_info.step.end_time %}
+                        <div class="step-time">完成：{{ step_info.step.end_time|date:"m-d H:i" }}</div>
+                        {% endif %}
+                        {% if step_info.step.confirm_user %}
+                        <div class="step-operator">确认人：{{ step_info.step.confirm_user.name }}</div>
+                        {% endif %}
+                        {% if step_info.step.note %}
+                        <div class="step-note">备注：{{ step_info.step.note }}</div>
+                        {% endif %}
+                        <!-- 步骤操作按钮 - 包含权限检查 -->
+                        {% if step_info.step.status == 1 %}
+                            {% if step_info.can_start and step_info.can_start_permission %}
+                            <div class="step-actions" style="margin-top: 10px;">
+                                <button class="btn btn-primary" style="font-size: 12px; padding: 6px 12px;" onclick="startStep('{{ step_info.step.id }}')">
+                                    开始此步骤
+                                </button>
+                            </div>
+                            {% elif not step_info.can_start_permission %}
+                            <div class="step-actions" style="margin-top: 10px;">
+                                <button class="btn btn-secondary" disabled style="font-size: 12px; padding: 6px 12px; background: #ffc107; color: #fff;">
+                                    🔒 无权限操作
+                                </button>
+                            </div>
+                            {% else %}
+                            <div class="step-actions" style="margin-top: 10px;">
+                                <button class="btn btn-secondary" disabled style="font-size: 12px; padding: 6px 12px; background: #e0e0e0; color: #999;">
+                                    🔒 等待前置步骤
+                                </button>
+                            </div>
+                            {% endif %}
+                        {% elif step_info.step.status == 2 %}
+                        <div class="step-actions" style="margin-top: 10px;">
+                            {% if step_info.can_complete_permission %}
+                            <button class="btn btn-primary" style="font-size: 12px; padding: 6px 12px; margin-right: 5px;" onclick="completeStep('{{ step_info.step.id }}')">
+                                ✅ 完成
+                            </button>
+                            {% else %}
+                            <button class="btn btn-secondary" disabled style="font-size: 12px; padding: 6px 12px; margin-right: 5px; background: #ffc107; color: #fff;">
+                                🔒 无完成权限
+                            </button>
+                            {% endif %}
+                            {% if step_info.can_skip_permission %}
+                            <button class="btn btn-outline" style="font-size: 12px; padding: 6px 12px;" onclick="skipStep('{{ step_info.step.id }}')">
+                                ⏭️ 跳过
+                            </button>
+                            {% else %}
+                            <button class="btn btn-secondary" disabled style="font-size: 12px; padding: 6px 12px; background: #ffc107; color: #fff;">
+                                🔒 无跳过权限
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% elif step_info.step.status == 4 %}
+                        <div class="step-actions" style="margin-top: 10px;">
+                            <span style="color: #ffc107; font-size: 12px;">⚠️ 已跳过</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if not forloop.last %}
+                <div class="step-connector {% if step_info.step.status == 3 %}completed{% endif %}"></div>
+                {% endif %}
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+<!-- 备注信息 -->
+{% if order.note %}
+<div class="card">
+    <div class="card-title">📝 备注信息</div>
+    <div class="note-content">{{ order.note }}</div>
+</div>
+{% endif %}
+
+<!-- 操作按钮 -->
+<div style="text-align: center; margin-top: 20px;">
+    <button class="btn btn-outline" onclick="history.back()">← 返回列表</button>
+    <button class="btn btn-primary" onclick="refreshOrder()" style="margin-left: 10px;">🔄 刷新</button>
+</div>
+
+{% block extra_css %}
+<style>
+/* 信息展示样式 */
+.info-group {
+    margin: 0;
+}
+
+.info-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 500;
+    color: #666;
+    min-width: 80px;
+    flex-shrink: 0;
+}
+
+.info-value {
+    flex: 1;
+    color: #333;
+}
+
+/* 进度步骤样式 */
+.progress-container {
+    padding: 10px 0;
+}
+
+.progress-step {
+    display: flex;
+    align-items: flex-start;
+    position: relative;
+}
+
+.step-indicator {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    flex-shrink: 0;
+    background: #f0f0f0;
+    color: #999;
+    font-size: 12px;
+}
+
+.progress-step.completed .step-indicator {
+    background: #28a745;
+    color: white;
+}
+
+.progress-step.active .step-indicator {
+    background: #007bff;
+    color: white;
+}
+
+.step-content {
+    flex: 1;
+    padding-bottom: 20px;
+}
+
+.step-title {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.step-status {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 3px;
+}
+
+.step-operator, .step-time {
+    font-size: 11px;
+    color: #999;
+    margin-bottom: 2px;
+}
+
+.step-connector {
+    position: absolute;
+    left: 14px;
+    top: 30px;
+    width: 2px;
+    height: 40px;
+    background: #e0e0e0;
+    z-index: -1;
+}
+
+.step-connector.completed {
+    background: #28a745;
+}
+
+/* 进度概览样式 */
+.progress-bar-container {
+    margin-bottom: 15px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #20c997);
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    text-align: center;
+    font-size: 12px;
+    color: #666;
+    font-weight: 500;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.stat-number {
+    font-size: 18px;
+    font-weight: bold;
+    color: #667eea;
+    margin-bottom: 2px;
+}
+
+.stat-label {
+    font-size: 11px;
+    color: #666;
+}
+
+/* 步骤备注样式 */
+.step-note {
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 2px;
+    background: #f8f9fa;
+    padding: 5px 8px;
+    border-radius: 4px;
+    margin-top: 5px;
+}
+
+/* 备注样式 */
+.note-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+    color: #333;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* 模态框样式 */
+.mobile-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 3000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 15px;
+    max-width: 400px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    padding: 20px 20px 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-footer {
+    padding: 0 20px 20px 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    resize: vertical;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+/* 明细列表样式 */
+.detail-list {
+    margin-top: 10px;
+    padding: 0;
+    list-style: none;
+}
+
+.detail-item {
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #e9ecef;
+}
+
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #333;
+}
+
+.detail-serial {
+    font-size: 14px;
+    color: #666;
+    margin-right: 10px;
+}
+
+.detail-title {
+    font-size: 14px;
+    color: #333;
+    flex: 1;
+    text-align: left;
+}
+
+.detail-content {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.5;
+}
+
+.detail-field {
+    margin-bottom: 3px;
+}
+
+.detail-field:last-child {
+    margin-bottom: 0;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 刷新订单信息
+function refreshOrder() {
+    showNotification('正在刷新订单信息...', 'info');
+    setTimeout(() => {
+        location.reload();
+    }, 500);
+}
+
+// 开始步骤
+async function startStep(stepId) {
+    try {
+        const response = await fetch(`/api/mobile/start-step/${stepId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            showNotification('步骤已开始', 'success');
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else if (data.status === 'need_confirmation') {
+            // 需要查看上个步骤的备注
+            showPreviousStepNoteModal(stepId, data.previous_step_name, data.previous_step_note);
+        } else {
+            showNotification('操作失败：' + (data.message || data.error), 'error');
+        }
+    } catch (error) {
+        console.error('开始步骤错误:', error);
+        showNotification('网络错误，请稍后重试', 'error');
+    }
+}
+
+// 显示上个步骤备注确认模态框
+function showPreviousStepNoteModal(stepId, previousStepName, previousStepNote) {
+    const modalHtml = `
+        <div class="mobile-modal" id="noteConfirmModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">⚠️ 上个步骤留下备注</h3>
+                    <button class="modal-close" onclick="closeModal('noteConfirmModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #ffc107;">
+                        <div style="font-weight: bold; margin-bottom: 8px;">步骤：${previousStepName}</div>
+                        <div style="font-weight: bold; margin-bottom: 8px;">备注内容：</div>
+                        <div style="background: white; padding: 10px; border-radius: 5px; border: 1px solid #dee2e6;">
+                            ${previousStepNote}
+                        </div>
+                    </div>
+                    <p style="color: #666; font-size: 14px;">请仔细查看上个步骤的备注信息，确认无误后再开始下个步骤。</p>
+                    <div style="text-align: center; margin-top: 15px;">
+                        <p style="color: #666; font-size: 14px;">
+                            <span id="countdown-display">5</span> 秒后可以确认开始
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="closeModal('noteConfirmModal')">取消</button>
+                    <button class="btn btn-primary" id="confirmStartButton" disabled>
+                        <span id="countdown-text">请等待 <span id="countdown-seconds">5</span> 秒</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    document.getElementById('noteConfirmModal').style.display = 'flex';
+    
+    // 开始倒计时
+    let countdown = 5;
+    const countdownInterval = setInterval(() => {
+        countdown--;
+        document.getElementById('countdown-display').textContent = countdown;
+        document.getElementById('countdown-seconds').textContent = countdown;
+        
+        if (countdown <= 0) {
+            clearInterval(countdownInterval);
+            // 启用确认按钮
+            const confirmButton = document.getElementById('confirmStartButton');
+            confirmButton.disabled = false;
+            confirmButton.innerHTML = '✅ 确认开始步骤';
+            confirmButton.onclick = () => confirmStartStep(stepId);
+        }
+    }, 1000);
+    
+    // 模态框关闭时清理倒计时
+    const originalCloseModal = window.closeModal;
+    window.closeModal = function(modalId) {
+        if (modalId === 'noteConfirmModal') {
+            clearInterval(countdownInterval);
+        }
+        originalCloseModal(modalId);
+    };
+}
+
+// 确认开始步骤（用户已查看备注）
+async function confirmStartStep(stepId) {
+    try {
+        const response = await fetch(`/api/mobile/confirm-start-step/${stepId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            closeModal('noteConfirmModal');
+            showNotification('步骤已开始', 'success');
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showNotification('操作失败：' + (data.message || data.error), 'error');
+        }
+    } catch (error) {
+        console.error('确认开始步骤错误:', error);
+        showNotification('网络错误，请稍后重试', 'error');
+    }
+}
+
+// 完成步骤 - 显示备注输入框
+function completeStep(stepId) {
+    showCompleteModal(stepId);
+}
+
+// 跳过步骤 - 显示跳过原因输入框
+function skipStep(stepId) {
+    showSkipModal(stepId);
+}
+
+// 显示完成步骤模态框
+function showCompleteModal(stepId) {
+    const modalHtml = `
+        <div class="mobile-modal" id="completeModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">✅ 完成步骤</h3>
+                    <button class="modal-close" onclick="closeModal('completeModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">完成备注（可选）：</label>
+                        <textarea class="form-control" id="completeNote" rows="3" placeholder="请输入完成备注，如特殊情况、注意事项等"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="closeModal('completeModal')">取消</button>
+                    <button class="btn btn-primary" onclick="confirmComplete('${stepId}')">确认完成</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    document.getElementById('completeModal').style.display = 'flex';
+}
+
+// 显示跳过步骤模态框
+function showSkipModal(stepId) {
+    const modalHtml = `
+        <div class="mobile-modal" id="skipModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">⏭️ 跳过步骤</h3>
+                    <button class="modal-close" onclick="closeModal('skipModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">跳过原因（必填）：</label>
+                        <textarea class="form-control" id="skipReason" rows="3" placeholder="请说明跳过该步骤的原因，如设备故障、材料不足等" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="closeModal('skipModal')">取消</button>
+                    <button class="btn btn-primary" onclick="confirmSkip('${stepId}')">确认跳过</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    document.getElementById('skipModal').style.display = 'flex';
+}
+
+// 关闭模态框
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+        setTimeout(() => {
+            modal.remove();
+        }, 300);
+    }
+}
+
+// 确认完成步骤
+async function confirmComplete(stepId) {
+    const note = document.getElementById('completeNote').value.trim();
+    
+    try {
+        const response = await fetch(`/api/mobile/complete-step/${stepId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({ note: note })
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            closeModal('completeModal');
+            showNotification(data.message || '步骤已完成', 'success');
+            if (data.order_completed) {
+                showNotification('🎉 恭喜！所有步骤已完成！', 'success');
+            }
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showNotification('操作失败：' + (data.message || data.error), 'error');
+        }
+    } catch (error) {
+        console.error('完成步骤错误:', error);
+        showNotification('网络错误，请稍后重试', 'error');
+    }
+}
+
+// 确认跳过步骤
+async function confirmSkip(stepId) {
+    const reason = document.getElementById('skipReason').value.trim();
+    
+    if (!reason) {
+        showNotification('请填写跳过原因', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/mobile/skip-step/${stepId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({ reason: reason })
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            closeModal('skipModal');
+            showNotification(data.message || '步骤已跳过', 'success');
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showNotification('操作失败：' + (data.message || data.error), 'error');
+        }
+    } catch (error) {
+        console.error('跳过步骤错误:', error);
+        showNotification('网络错误，请稍后重试', 'error');
+    }
+}
+
+// 获取CSRF Token
+function getCsrfToken() {
+    const name = 'csrftoken';
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// 初始化页面
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('订单详情页面加载完成');
+    
+    // 初始化WebSocket连接以获取实时更新
+    initWebSocketConnection();
+});
+
+// 初始化WebSocket连接
+function initWebSocketConnection() {
+    if (typeof WebSocket !== 'undefined') {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/notifications/`;
+        
+        const socket = new WebSocket(wsUrl);
+        
+        socket.onopen = function(event) {
+            console.log('📱 订单详情WebSocket连接成功');
+        };
+        
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log('📱 收到WebSocket消息:', data);
+            
+            if (data.type === 'progress_notification') {
+                // 检查是否是当前订单的更新
+                const currentOrderId = parseInt('{{ order.id }}');
+                if (data.order_id === currentOrderId) {
+                    showNotification('订单进度已更新', 'success');
+                    // 延迟刷新，让用户看到通知
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                }
+            }
+        };
+        
+        socket.onclose = function(event) {
+            console.log('📱 WebSocket连接关闭');
+        };
+        
+        socket.onerror = function(error) {
+            console.error('📱 WebSocket错误:', error);
+        };
+    }
+}
+</script>
+{% endblock %} 
+{% endblock %} 

@@ -1,0 +1,67 @@
+<div class="panel {{ card_class|default:'panel-default' }}">
+    <div class="panel-heading">
+        <h4 class="panel-title">{{ title }}</h4>
+    </div>
+    <div class="panel-body">
+        {% if progress %}
+            <div class="progress">
+                <div class="progress-bar progress-bar-success" role="progressbar" style="width: {{ progress.percentage }}%;" aria-valuenow="{{ progress.percentage }}" aria-valuemin="0" aria-valuemax="100">{{ progress.percentage }}%</div>
+            </div>
+            <p class="mt-2">总步骤: {{ progress.total }} | 已完成: {{ progress.completed }} | 进行中: {{ progress.in_progress }} | 待开始: {{ progress.pending }}</p>
+            <hr>
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead>
+                        <tr>
+                            <th>步骤</th>
+                            <th>状态</th>
+                            <th>操作员</th>
+                            <th>开始时间</th>
+                            <th>确认人</th>
+                            <th>完成/跳过时间</th>
+                            <th>备注</th>
+                            <th class="text-right">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in step_list %}
+                            <tr>
+                                <td><strong>{{ item.step.step_name }}</strong></td>
+                                <td>
+                                    <span class="label {% if item.step.status == 1 %}label-default{% elif item.step.status == 2 %}label-info{% elif item.step.status == 3 %}label-success{% elif item.step.status == 4 %}label-warning{% endif %}">
+                                        {{ item.step.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ item.step.operator.name|default:"-" }}</td>
+                                <td>{{ item.step.start_time|date:"Y-m-d H:i"|default:"-" }}</td>
+                                <td>{{ item.step.confirm_user.name|default:"-" }}</td>
+                                <td>{{ item.step.end_time|date:"Y-m-d H:i"|default:"-" }}</td>
+                                <td>{{ item.step.note|default:"-" }}</td>
+                                <td class="text-right">
+                                    <div class="btn-group">
+                                        {% if item.step.status == 1 %}
+                                            {% if item.can_start %}
+                                                <button class="btn btn-sm btn-primary start-step" data-step-id="{{ item.step.id }}">开始</button>
+                                            {% else %}
+                                                <button class="btn btn-sm btn-secondary" disabled>等待前置</button>
+                                            {% endif %}
+                                        {% elif item.step.status == 2 %}
+                                            <button class="btn btn-sm btn-success complete-step" data-step-id="{{ item.step.id }}">完成</button>
+                                            <button class="btn btn-sm btn-warning skip-step" data-step-id="{{ item.step.id }}">跳过</button>
+                                        {% elif item.step.status == 3 %}
+                                            <span class="text-success">已完成</span>
+                                        {% elif item.step.status == 4 %}
+                                            <span class="text-warning">已跳过</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info">该分类下无进度步骤。</div>
+        {% endif %}
+    </div>
+</div>

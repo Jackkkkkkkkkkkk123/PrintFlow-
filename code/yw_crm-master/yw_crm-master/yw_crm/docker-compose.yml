@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: your_mysql_root_password
+      MYSQL_DATABASE: your_mysql_database
+      MYSQL_USER: your_mysql_user
+      MYSQL_PASSWORD: your_mysql_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  redis:
+    image: redis:7.0
+    container_name: redis_cache
+    restart: always
+    ports:
+      - "6379:6379"
+
+  web:
+    build: .
+    container_name: django_web
+    restart: always
+    command: python manage.py runserver 0.0.0.0:5173
+    volumes:
+      - .:/app
+    ports:
+      - "5173:5173"
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DB_HOST=db
+      - DB_NAME=your_mysql_database
+      - DB_USER=your_mysql_user
+      - DB_PASS=your_mysql_password
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+volumes:
+  mysql_data:

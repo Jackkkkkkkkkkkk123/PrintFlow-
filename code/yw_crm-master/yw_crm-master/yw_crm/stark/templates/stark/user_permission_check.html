@@ -1,0 +1,277 @@
+{% extends 'layout.html' %}
+
+{% block css %}
+<style>
+.permission-check-container {
+    margin: 20px;
+}
+
+.user-info-card {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.permission-section {
+    margin-bottom: 30px;
+}
+
+.permission-section h3 {
+    color: #333;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.permission-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.role-badge {
+    background: #007bff;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    margin-right: 10px;
+}
+
+.permission-badge {
+    background: #28a745;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    margin-right: 5px;
+}
+
+.step-badge {
+    background: #ffc107;
+    color: #212529;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    margin-right: 5px;
+}
+
+.no-permission {
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}
+
+.btn-back {
+    margin-bottom: 20px;
+}
+
+.stats-row {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 15px;
+    background: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stat-number {
+    font-size: 24px;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-size: 14px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="permission-check-container">
+    <a href="javascript:history.back()" class="btn btn-default btn-back">
+        <i class="fa fa-arrow-left"></i> 返回用户列表
+    </a>
+    
+    <!-- 用户信息卡片 -->
+    <div class="user-info-card">
+        <h2><i class="fa fa-user"></i> 用户权限检查</h2>
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>用户名:</strong> {{ user.username }}</p>
+                <p><strong>真实姓名:</strong> {{ user.name }}</p>
+                <p><strong>邮箱:</strong> {{ user.email }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>部门:</strong> {{ user.department }}</p>
+                <p><strong>性别:</strong> {{ user.get_gender_display }}</p>
+                <p><strong>手机:</strong> {{ user.phone }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 权限统计 -->
+    <div class="stats-row">
+        <div class="stat-item">
+            <div class="stat-number">{{ roles.count }}</div>
+            <div class="stat-label">分配角色</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">{{ basic_permissions|length }}</div>
+            <div class="stat-label">基础权限</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">{{ step_permissions|length }}</div>
+            <div class="stat-label">工序权限</div>
+        </div>
+    </div>
+    
+    <!-- 角色信息 -->
+    <div class="permission-section">
+        <h3><i class="fa fa-users"></i> 分配的角色</h3>
+        {% if roles %}
+            {% for role in roles %}
+            <div class="permission-card">
+                <span class="role-badge">{{ role.title }}</span>
+                <span class="text-muted">{{ role.permissions.count }}个基础权限，{{ role.workflow_step_permissions.count }}个工序权限</span>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-permission">
+                <i class="fa fa-exclamation-triangle"></i> 该用户未分配任何角色
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- 基础权限 -->
+    <div class="permission-section">
+        <h3><i class="fa fa-key"></i> 基础权限详情</h3>
+        {% if basic_permissions %}
+            {% for perm in basic_permissions %}
+            <div class="permission-card">
+                <span class="role-badge">{{ perm.role }}</span>
+                <strong>{{ perm.permission }}</strong>
+                <br>
+                <small class="text-muted">URL: {{ perm.url }}</small>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-permission">
+                <i class="fa fa-info-circle"></i> 该用户没有基础权限
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- 工序权限 -->
+    <div class="permission-section">
+        <h3><i class="fa fa-cogs"></i> 工序权限详情</h3>
+        {% if step_permissions %}
+            {% for perm in step_permissions %}
+            <div class="permission-card">
+                <div class="row">
+                    <div class="col-md-8">
+                        <span class="role-badge">{{ perm.role }}</span>
+                        <strong>{{ perm.permission_name }}</strong>
+                        <br>
+                        <p><strong>印刷类型:</strong> {{ perm.print_type }}</p>
+                        <p><strong>允许工序:</strong> 
+                            {% for step in perm.allowed_steps %}
+                                <span class="step-badge">{{ step }}</span>
+                            {% endfor %}
+                        </p>
+                        <p><strong>可执行操作:</strong> 
+                            {% for op in perm.operations %}
+                                <span class="permission-badge">{{ op }}</span>
+                            {% endfor %}
+                        </p>
+                        <p><strong>时间限制:</strong> {{ perm.time_restriction }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-permission">
+                <i class="fa fa-info-circle"></i> 该用户没有工序权限
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- 权限问题检查 -->
+    {% if permission_issues %}
+    <div class="permission-section">
+        <h3><i class="fa fa-exclamation-triangle"></i> 权限问题</h3>
+        {% for issue in permission_issues %}
+            <div class="permission-card">
+                {% if issue.type == 'error' %}
+                    <div class="alert alert-danger">
+                        <i class="fa fa-times-circle"></i> 
+                        <strong>{{ issue.title }}:</strong> {{ issue.description }}
+                    </div>
+                {% elif issue.type == 'warning' %}
+                    <div class="alert alert-warning">
+                        <i class="fa fa-exclamation-triangle"></i> 
+                        <strong>{{ issue.title }}:</strong> {{ issue.description }}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fa fa-info-circle"></i> 
+                        <strong>{{ issue.title }}:</strong> {{ issue.description }}
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- 权限建议 -->
+    <div class="permission-section">
+        <h3><i class="fa fa-lightbulb-o"></i> 权限建议</h3>
+        <div class="permission-card">
+            {% if not roles %}
+                <div class="alert alert-warning">
+                    <i class="fa fa-exclamation-triangle"></i> 
+                    <strong>建议:</strong> 该用户未分配任何角色，请前往
+                    <a href="/rbac/distribute/permissions/?uid={{ user.id }}" target="_blank">权限分配页面</a>
+                    为其分配合适的角色。
+                </div>
+            {% elif not basic_permissions and not step_permissions %}
+                <div class="alert alert-warning">
+                    <i class="fa fa-exclamation-triangle"></i> 
+                    <strong>建议:</strong> 该用户虽然分配了角色，但角色没有配置任何权限，请检查角色权限配置。
+                </div>
+            {% elif permission_issues %}
+                <div class="alert alert-warning">
+                    <i class="fa fa-exclamation-triangle"></i> 
+                    <strong>建议:</strong> 该用户的权限配置存在问题，请根据上述问题列表进行调整。
+                </div>
+            {% else %}
+                <div class="alert alert-success">
+                    <i class="fa fa-check-circle"></i> 
+                    <strong>权限配置正常:</strong> 该用户已正确配置角色和权限，可以正常使用系统功能。
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- 操作按钮 -->
+    <div class="text-center">
+        <a href="/rbac/distribute/permissions/?uid={{ user.id }}" class="btn btn-primary" target="_blank">
+            <i class="fa fa-cog"></i> 权限分配
+        </a>
+        <a href="/stark/crm/userinfo/{{ user.id }}/change/" class="btn btn-info">
+            <i class="fa fa-edit"></i> 编辑用户
+        </a>
+    </div>
+</div>
+{% endblock %} 

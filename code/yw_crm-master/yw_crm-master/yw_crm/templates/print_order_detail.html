@@ -1,0 +1,184 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">订单详情</h3>
+                </div>
+                <div class="panel-body">
+                    <!-- 主信息区 -->
+                    <table class="table table-bordered" style="font-size: 14px;">
+                        <tr>
+                            <th>订单单号</th>
+                            <td>{{ main.order_no }}</td>
+                            <th>委印日期</th>
+                            <td>{{ main.order_date|date:'Y-m-d' }}</td>
+                            <th>交货日期</th>
+                            <td>{{ main.delivery_date|date:'Y-m-d' }}</td>
+                        </tr>
+                        <tr>
+                            <th>客户名称</th>
+                            <td>{{ main.customer_name }}</td>
+                            <th>工单号</th>
+                            <td>{{ main.work_order_no }}</td>
+                            <th>订单数量</th>
+                            <td>{{ main.quantity }}</td>
+                        </tr>
+                        <tr>
+                            <th>单位</th>
+                            <td>{{ main.unit }}</td>
+                            <th>业务员</th>
+                            <td>{{ main.salesman }}</td>
+                            <th>联系人</th>
+                            <td>{{ main.contact_person }}</td>
+                        </tr>
+                        <tr>
+                            <th>联系方式</th>
+                            <td>{{ main.contact_phone }}</td>
+                            <th>成品尺寸</th>
+                            <td colspan="3">{{ main.product_size }}</td>
+                        </tr>
+                        <tr>
+                            <th>设计制作要求</th>
+                            <td colspan="5">{{ main.design_requirement }}</td>
+                        </tr>
+                        <tr>
+                            <th>产品描述</th>
+                            <td colspan="5">{{ main.product_description }}</td>
+                        </tr>
+                        <tr>
+                            <th>拼晒要求</th>
+                            <td colspan="5">{{ main.imposition_requirement }}</td>
+                        </tr>
+                        <tr>
+                            <th>客户提供</th>
+                            <td colspan="5">{{ main.customer_supply }}</td>
+                        </tr>
+                        <tr>
+                            <th>消耗要求</th>
+                            <td colspan="5">{{ main.consumption_requirement }}</td>
+                        </tr>
+                        <tr>
+                            <th>印刷工艺要求</th>
+                            <td colspan="5">{{ main.print_tech_requirement }}</td>
+                        </tr>
+                        <tr>
+                            <th>质量要求</th>
+                            <td colspan="5">{{ main.quality_requirement }}</td>
+                        </tr>
+                        <tr>
+                            <th>送货和包装要求</th>
+                            <td colspan="5">{{ main.delivery_pack_requirement }}</td>
+                        </tr>
+                        <tr>
+                            <th>备注</th>
+                            <td colspan="5">{{ main.note }}</td>
+                        </tr>
+                        <tr>
+                            <th>客户签字</th>
+                            <td>{{ main.customer_signature }}</td>
+                            <th>制单员</th>
+                            <td>{{ main.order_maker }}</td>
+                            <th>审核人</th>
+                            <td>{{ main.auditor }}</td>
+                        </tr>
+                    </table>
+
+                    <!-- 用料明细区 -->
+                    <h4>用料明细</h4>
+                    <table class="table table-bordered table-striped" style="font-size: 13px;">
+                        <thead>
+                        <tr>
+                            <th>序</th><th>项目</th><th>材料名称</th><th>规格</th><th>页数</th><th>开数</th><th>放数</th><th>总数</th><th>吨价</th><th>单价</th><th>金额</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for d in details %}
+                            {% if d.detail_type == '用料' %}
+                            <tr>
+                                <td>{{ d.serial_no }}</td><td>{{ d.item }}</td><td>{{ d.material_name }}</td><td>{{ d.spec }}</td><td>{{ d.page_number }}</td><td>{{ d.open_number }}</td><td>{{ d.fangshu }}</td><td>{{ d.total }}</td><td>{{ d.dunjia }}</td><td>{{ d.unit_price }}</td><td>{{ d.amount }}</td>
+                            </tr>
+                            {% endif %}
+                        {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <!-- 印前明细区 -->
+                    <h4>印前明细</h4>
+                    <table class="table table-bordered table-striped" style="font-size: 13px;">
+                        <thead>
+                        <tr>
+                            <th>序</th><th>项目</th><th>内容</th><th>规格</th><th>制版名称</th><th>备注</th><th>数量</th><th>单位</th><th>单价</th><th>金额</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for d in details %}
+                            {% if d.detail_type == '印前' %}
+                            <tr>
+                                <td>{{ d.serial_no }}</td><td>{{ d.item }}</td><td>{{ d.content }}</td><td>{{ d.spec }}</td><td>{{ d.plate_name }}</td><td>{{ d.note_detail }}</td><td>{{ d.quantity }}</td><td>{{ d.unit }}</td><td>{{ d.unit_price }}</td><td>{{ d.amount }}</td>
+                            </tr>
+                            {% endif %}
+                        {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <!-- 印刷明细区 -->
+                    <h4>印刷明细</h4>
+                    <table class="table table-bordered table-striped" style="font-size: 13px;">
+                        <thead>
+                        <tr>
+                            <th>序</th><th>项目</th><th>印色</th><th>印刷尺寸</th><th>印刷方式</th><th>机台</th><th>数量</th><th>单位</th><th>单价</th><th>金额</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for d in details %}
+                            {% if d.detail_type == '印刷' %}
+                            <tr>
+                                <td>{{ d.serial_no }}</td><td>{{ d.item }}</td><td>{{ d.print_color }}</td><td>{{ d.print_size }}</td><td>{{ d.print_method }}</td><td>{{ d.machine }}</td><td>{{ d.quantity }}</td><td>{{ d.unit }}</td><td>{{ d.unit_price }}</td><td>{{ d.amount }}</td>
+                            </tr>
+                            {% endif %}
+                        {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <!-- 印后明细区 -->
+                    <h4>印后明细</h4>
+                    <table class="table table-bordered table-striped" style="font-size: 13px;">
+                        <thead>
+                        <tr>
+                            <th>序</th><th>项目</th><th>加工内容</th><th>工序</th><th>规格</th><th>机台</th><th>数量</th><th>单价</th><th>金额</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for d in details %}
+                            {% if d.detail_type == '印后' %}
+                            <tr>
+                                <td>{{ d.serial_no }}</td><td>{{ d.item }}</td><td>{{ d.process_content }}</td><td>{{ d.process }}</td><td>{{ d.spec }}</td><td>{{ d.machine }}</td><td>{{ d.quantity }}</td><td>{{ d.unit_price }}</td><td>{{ d.amount }}</td>
+                            </tr>
+                            {% endif %}
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    
+                    <!-- 底部操作按钮 -->
+                    <div class="text-center" style="margin-top: 40px; padding: 20px 0; border-top: 1px solid #ddd;">
+                        <a href="{% url 'edit_print_order' main.id %}" class="btn btn-primary btn-lg">
+                            <i class="fa fa-edit"></i> 编辑订单
+                        </a>
+                        <a href="{% url 'print_order_list' %}" class="btn btn-default btn-lg" style="margin-left: 15px;">
+                            <i class="fa fa-arrow-left"></i> 返回列表
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    h4 { margin-top: 30px; }
+    table th, table td { text-align: center; vertical-align: middle; }
+</style>
+{% endblock %} 

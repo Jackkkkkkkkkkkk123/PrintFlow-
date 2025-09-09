@@ -1,0 +1,212 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">订单进度管理：{{ order.order_no }}</h3>
+                </div>
+                <div class="card-body">
+                    {% if error %}
+                        <div class="alert alert-danger">{{ error }}</div>
+                    {% else %}
+                        <div class="row">
+                            <!-- 封面进度 -->
+                            <div class="col-md-6">
+                                <div class="card card-primary">
+                                    <div class="card-header">
+                                        <h4 class="card-title">封面进度</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="progress">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ cover_progress.percentage }}%;" aria-valuenow="{{ cover_progress.percentage }}" aria-valuemin="0" aria-valuemax="100">{{ cover_progress.percentage }}%</div>
+                                        </div>
+                                        <p class="mt-2">总步骤: {{ cover_progress.total }} | 已完成: {{ cover_progress.completed }} | 进行中: {{ cover_progress.in_progress }} | 待开始: {{ cover_progress.pending }}</p>
+                                        <hr>
+                                        <ul class="list-group">
+                                            {% for item in cover_step_list %}
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <span>{{ item.step.step_name }}</span>
+                                                    <div>
+                                                        {% if item.step.status == 1 %}
+                                                            {% if item.can_start %}
+                                                                <button class="btn btn-sm btn-primary start-step-btn" data-step-id="{{ item.step.id }}">开始</button>
+                                                            {% else %}
+                                                                <button class="btn btn-sm btn-secondary" disabled>等待前置</button>
+                                                            {% endif %}
+                                                        {% elif item.step.status == 2 %}
+                                                            <button class="btn btn-sm btn-success complete-step-btn" data-step-id="{{ item.step.id }}">完成</button>
+                                                            <button class="btn btn-sm btn-warning skip-step-btn" data-step-id="{{ item.step.id }}">跳过</button>
+                                                        {% elif item.step.status == 3 %}
+                                                            <span class="badge badge-success">已完成</span>
+                                                        {% elif item.step.status == 4 %}
+                                                            <span class="badge badge-secondary">已跳过</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 内文进度 -->
+                            <div class="col-md-6">
+                                <div class="card card-info">
+                                    <div class="card-header">
+                                        <h4 class="card-title">内文进度</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="progress">
+                                            <div class="progress-bar bg-info" role="progressbar" style="width: {{ content_progress.percentage }}%;" aria-valuenow="{{ content_progress.percentage }}" aria-valuemin="0" aria-valuemax="100">{{ content_progress.percentage }}%</div>
+                                        </div>
+                                        <p class="mt-2">总步骤: {{ content_progress.total }} | 已完成: {{ content_progress.completed }} | 进行中: {{ content_progress.in_progress }} | 待开始: {{ content_progress.pending }}</p>
+                                        <hr>
+                                        <ul class="list-group">
+                                            {% for item in content_step_list %}
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <span>{{ item.step.step_name }}</span>
+                                                    <div>
+                                                        {% if item.step.status == 1 %}
+                                                            {% if item.can_start %}
+                                                                <button class="btn btn-sm btn-primary start-step-btn" data-step-id="{{ item.step.id }}">开始</button>
+                                                            {% else %}
+                                                                <button class="btn btn-sm btn-secondary" disabled>等待前置</button>
+                                                            {% endif %}
+                                                        {% elif item.step.status == 2 %}
+                                                            <button class="btn btn-sm btn-success complete-step-btn" data-step-id="{{ item.step.id }}">完成</button>
+                                                            <button class="btn btn-sm btn-warning skip-step-btn" data-step-id="{{ item.step.id }}">跳过</button>
+                                                        {% elif item.step.status == 3 %}
+                                                            <span class="badge badge-success">已完成</span>
+                                                        {% elif item.step.status == 4 %}
+                                                            <span class="badge badge-secondary">已跳过</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 备注/原因输入模态框 -->
+<div class="modal fade" id="noteModal" tabindex="-1" role="dialog" aria-labelledby="noteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="noteModalLabel"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <textarea class="form-control" id="noteTextarea" rows="3"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="confirmNoteBtn">确认</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+$(function () {
+    let currentStepId = null;
+    let currentAction = null;
+
+    // 开始步骤
+    $('.start-step-btn').on('click', function () {
+        currentStepId = $(this).data('step-id');
+        $.ajax({
+            url: `/start-progress-step/${currentStepId}/`,
+            type: 'POST',
+            headers: { "X-CSRFToken": "{{ csrf_token }}" },
+            success: function (res) {
+                if (res.status) {
+                    location.reload();
+                } else {
+                    if (res.need_confirmation) {
+                        if(confirm(res.message + "\n\n备注内容：'" + res.previous_step_note + "'\n\n是否继续开始此步骤？")){
+                            $.ajax({
+                                url: `/confirm-start-progress-step/${currentStepId}/`,
+                                type: 'POST',
+                                headers: { "X-CSRFToken": "{{ csrf_token }}" },
+                                success: function(res){
+                                    if(res.status){
+                                        location.reload();
+                                    } else {
+                                        alert(res.message);
+                                    }
+                                }
+                            });
+                        }
+                    } else {
+                        alert(res.message);
+                    }
+                }
+            }
+        });
+    });
+
+    // 完成步骤
+    $('.complete-step-btn').on('click', function () {
+        currentStepId = $(this).data('step-id');
+        currentAction = 'complete';
+        $('#noteModalLabel').text('完成备注');
+        $('#noteTextarea').val('');
+        $('#noteModal').modal('show');
+    });
+
+    // 跳过步骤
+    $('.skip-step-btn').on('click', function () {
+        currentStepId = $(this).data('step-id');
+        currentAction = 'skip';
+        $('#noteModalLabel').text('跳过原因');
+        $('#noteTextarea').val('');
+        $('#noteModal').modal('show');
+    });
+
+    // 确认备注/原因
+    $('#confirmNoteBtn').on('click', function () {
+        let note = $('#noteTextarea').val();
+        let url = '';
+        let data = {};
+
+        if (currentAction === 'complete') {
+            url = `/complete-progress-step/${currentStepId}/`;
+            data = { note: note };
+        } else if (currentAction === 'skip') {
+            url = `/skip-progress-step/${currentStepId}/`;
+            data = { reason: note };
+        }
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            headers: { "X-CSRFToken": "{{ csrf_token }}" },
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function (res) {
+                if (res.status) {
+                    location.reload();
+                } else {
+                    alert(res.message);
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

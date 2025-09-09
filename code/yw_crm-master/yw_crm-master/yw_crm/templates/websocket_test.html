@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket测试页面</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .connected { background-color: #d4edda; color: #155724; }
+        .disconnected { background-color: #f8d7da; color: #721c24; }
+        .message { background-color: #f0f0f0; padding: 10px; margin: 5px 0; border-radius: 3px; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        #log { height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>WebSocket连接测试</h1>
+    
+    <div id="status" class="status disconnected">状态: 未连接</div>
+    
+    <div>
+        <button onclick="connectWebSocket()">连接WebSocket</button>
+        <button onclick="sendTestMessage()">发送测试消息</button>
+        <button onclick="clearLog()">清空日志</button>
+    </div>
+    
+    <h3>消息日志:</h3>
+    <div id="log"></div>
+    
+    <script>
+        let socket = null;
+        
+        function log(message, isError = false) {
+            const logDiv = document.getElementById('log');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = isError ? 'message error' : 'message';
+            messageDiv.innerHTML = `${new Date().toLocaleTimeString()}: ${message}`;
+            logDiv.appendChild(messageDiv);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateStatus(connected) {
+            const statusDiv = document.getElementById('status');
+            if (connected) {
+                statusDiv.textContent = '状态: 已连接';
+                statusDiv.className = 'status connected';
+            } else {
+                statusDiv.textContent = '状态: 未连接';
+                statusDiv.className = 'status disconnected';
+            }
+        }
+        
+        function connectWebSocket() {
+            try {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/ws/notifications/`;
+                
+                log(`尝试连接到: ${wsUrl}`);
+                
+                socket = new WebSocket(wsUrl);
+                
+                socket.onopen = function(event) {
+                    log('✅ WebSocket连接已建立');
+                    updateStatus(true);
+                };
+                
+                socket.onmessage = function(event) {
+                    log(`📨 收到消息: ${event.data}`);
+                    try {
+                        const data = JSON.parse(event.data);
+                        log(`📋 解析后的消息: ${JSON.stringify(data, null, 2)}`);
+                    } catch (e) {
+                        log(`❌ 消息解析失败: ${e.message}`, true);
+                    }
+                };
+                
+                socket.onclose = function(event) {
+                    log(`❌ WebSocket连接已关闭: code=${event.code}, reason=${event.reason}`);
+                    updateStatus(false);
+                };
+                
+                socket.onerror = function(error) {
+                    log(`❌ WebSocket错误: ${error}`, true);
+                    updateStatus(false);
+                };
+                
+            } catch (error) {
+                log(`❌ 连接失败: ${error.message}`, true);
+            }
+        }
+        
+        function sendTestMessage() {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                const message = {
+                    type: 'ping',
+                    timestamp: new Date().toISOString()
+                };
+                socket.send(JSON.stringify(message));
+                log(`📤 发送测试消息: ${JSON.stringify(message)}`);
+            } else {
+                log('❌ WebSocket未连接，无法发送消息', true);
+            }
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+        
+        // 页面加载时自动连接
+        window.onload = function() {
+            log('🚀 页面加载完成，准备连接WebSocket...');
+            connectWebSocket();
+        };
+    </script>
+</body>
+</html> 

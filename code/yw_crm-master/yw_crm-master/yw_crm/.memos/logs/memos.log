@@ -1,0 +1,2 @@
+2025-07-12 12:31:17,973 - tensorflow - WARNING - module_wrapper.py:149 - _tfmw_add_deprecation_warning - From E:\Adownloads\Python\Lib\site-packages\tf_keras\src\losses.py:2976: The name tf.losses.sparse_softmax_cross_entropy is deprecated. Please use tf.compat.v1.losses.sparse_softmax_cross_entropy instead.
+

@@ -1,0 +1,64 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 col-md-offset-2">
+            <div class="panel panel-danger">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        <i class="fa fa-warning"></i> 删除订单确认
+                    </h3>
+                </div>
+                <div class="panel-body">
+                    <div class="alert alert-danger">
+                        <h4><i class="fa fa-exclamation-triangle"></i> 警告</h4>
+                        <p>您即将删除以下印刷订单，此操作不可恢复！</p>
+                    </div>
+                    
+                    <div class="well">
+                        <h4>订单信息</h4>
+                        <dl class="dl-horizontal">
+                            <dt>订单编号：</dt>
+                            <dd>{{ order.order_no }}</dd>
+                            <dt>客户名称：</dt>
+                            <dd>{{ order.customer_name|default:"未填写" }}</dd>
+                            <dt>产品名称：</dt>
+                            <dd>{{ order.product_name|default:"未填写" }}</dd>
+                            <dt>订货数量：</dt>
+                            <dd>{{ order.quantity|default:"未填写" }}</dd>
+                            <dt>下单日期：</dt>
+                            <dd>{{ order.order_date|date:"Y-m-d H:i"|default:"未填写" }}</dd>
+                            <dt>交货日期：</dt>
+                            <dd>{{ order.delivery_date|date:"Y-m-d"|default:"未填写" }}</dd>
+                        </dl>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <p><strong>注意：</strong>删除此订单将同时删除以下相关数据：</p>
+                        <ul>
+                            <li>订单主要信息</li>
+                            <li>用料明细数据</li>
+                            <li>印前明细数据</li>
+                            <li>印刷明细数据</li>
+                            <li>印后明细数据</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="text-center">
+                        <form method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="fa fa-trash"></i> 确认删除
+                            </button>
+                        </form>
+                        <a href="{% url 'print_order_list' %}" class="btn btn-default btn-lg" style="margin-left: 15px;">
+                            <i class="fa fa-arrow-left"></i> 取消返回
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
